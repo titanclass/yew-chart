@@ -1,0 +1,38 @@
+// Typical settings for all charts
+
+.time-axis-x {
+    .line {
+        stroke: grey;
+    }
+    .tick {
+        stroke: grey;
+    }
+}
+
+.axis-y {
+    .line {
+        stroke: grey;
+    }
+    .tick {
+        stroke: grey;
+    }
+}
+
+// Typical settings for our specific chart
+
+.chart {
+    max-width: 1332px;
+
+    .some-y-axis {
+        .title tspan {
+            fill: green;
+            font-size: larger;
+        }
+
+    }
+
+    .horizontal-series.some-series {
+        stroke: green;
+        stroke-width: 2px;
+    }
+}
