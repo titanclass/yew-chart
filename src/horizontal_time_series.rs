@@ -1,14 +1,14 @@
 /// A HorizontalTimeSeries represents the data of a chat. Data is expressed as a vector of
 /// timestamp/float value tuples. As per the HorizontalTimeAxis, a range of timestamps is
-/// expressed along with a step. If there is a break in data where one or more steps are 
+/// expressed along with a step. If there is a break in data where one or more steps are
 /// missed then any line being drawn will be stopped and then resumed accordingly.
 /// A line can be labelled at various places in time represented with a timestamp, a string
 /// label and a float value at that point.
 ///
 /// A name is associated with the series to facilitate styling.
+use std::{cmp, ops::Range, rc::Rc};
 
-use std::{cmp, rc::Rc};
-
+use chrono::{DateTime, Duration, Utc};
 use wasm_bindgen::JsCast;
 use yew::{
     prelude::*,
@@ -34,11 +34,9 @@ pub struct Props {
     pub name: String,
     pub data: Rc<Vec<(i64, f32)>>,
     pub data_labels: Option<Rc<Vec<(i64, String, f32)>>>,
-    pub time_from: i64,
-    pub time_to: i64,
-    pub step: i64,
-    pub range_from: f32,
-    pub range_to: f32,
+    pub time: Range<DateTime<Utc>>,
+    pub time_step: Duration,
+    pub scale: Range<f32>,
     pub x: u32,
     pub y: u32,
     pub height: u32,
@@ -54,11 +52,9 @@ impl PartialEq for Props {
                 (Some(labels), Some(other_labels)) => Rc::ptr_eq(labels, other_labels),
                 _ => false,
             }
-            && self.time_from == other.time_from
-            && self.time_to == other.time_to
-            && self.step == other.step
-            && self.range_from == other.range_from
-            && self.range_to == other.range_to
+            && self.time == other.time
+            && self.scale == other.scale
+            && self.time_step == other.time_step
             && self.x == other.x
             && self.y == other.y
             && self.height == other.height
@@ -81,11 +77,11 @@ impl HorizontalTimeSeries {
     fn derive_props(props: &Props) -> DerivedProps {
         let classes = classes!("horizontal-series", props.name.to_owned());
 
-        let x_range = props.time_to - props.time_from;
+        let x_range = props.time.end.timestamp() - props.time.start.timestamp();
         let x_scale = props.width as f32 / x_range as f32;
 
-        let y_range = props.range_to - props.range_from;
-        let y_scale = props.height as f32 / y_range as f32;
+        let y_range = props.scale.end - props.scale.start;
+        let y_scale = props.height as f32 / y_range;
 
         let mut svg_elements = Vec::<Html>::with_capacity(
             props.data.len() + props.data_labels.as_ref().map(|d| d.len()).unwrap_or(0),
@@ -94,10 +90,11 @@ impl HorizontalTimeSeries {
 
         let mut top_y = props.height;
 
-        let mut last_step_time = -props.step;
+        let time_step = props.time_step.num_seconds();
+        let mut last_step_time = -time_step;
         for (time, datum) in props.data.iter() {
-            let step_time = (time / props.step) * props.step;
-            if step_time - last_step_time > props.step {
+            let step_time = (time / time_step) * time_step;
+            if step_time - last_step_time > time_step {
                 if props.series_type == SeriesType::Line {
                     let points = element_points
                         .iter()
@@ -121,11 +118,14 @@ impl HorizontalTimeSeries {
                 element_points.clear();
             }
             let x = cmp::min(
-                ((*time - props.time_from) as f32 * x_scale) as u32,
+                ((*time - props.time.start.timestamp()) as f32 * x_scale) as u32,
                 props.width,
             ) + props.x;
             let y = (props.height
-                - cmp::min(((*datum - props.range_from) * y_scale) as u32, props.height))
+                - cmp::min(
+                    ((*datum - props.scale.start) * y_scale) as u32,
+                    props.height,
+                ))
                 + props.y;
             top_y = cmp::min(top_y, y);
             element_points.push((x, y));
@@ -156,10 +156,10 @@ impl HorizontalTimeSeries {
             let circle_radius = DATA_LABEL_OFFSET >> 1;
             for (time, label, datum) in data_labels.iter() {
                 let x = cmp::min(
-                    ((*time - props.time_from) as f32 * x_scale) as u32,
+                    ((*time - props.time.start.timestamp()) as f32 * x_scale) as u32,
                     props.width,
                 ) + props.x;
-                let y = props.height - ((*datum - props.range_from) * y_scale) as u32 + props.y;
+                let y = props.height - ((*datum - props.scale.start) * y_scale) as u32 + props.y;
                 svg_elements.push(
                     html! {
                         <>

@@ -1,5 +1,7 @@
+use std::ops::Range;
+
 /// A HorizontalTimeAxis represents a from and to time expressed as a timestamp
-/// as represented by Chrono. A step in seconds is also expressed and indicates 
+/// as represented by Chrono. A step in seconds is also expressed and indicates
 /// the interval to be used for each tick on the axis.
 ///
 /// Time is rendered in the browser's local time.
@@ -10,9 +12,12 @@
 /// *   line - the axis line
 /// *   tick - the axis tick line
 /// *   text - the axis text
-
-use chrono::{DateTime, Local, NaiveDateTime, Utc};
-use yew::{prelude::*, services::{ResizeService, resize::ResizeTask}, web_sys::Element};
+use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
+use yew::{
+    prelude::*,
+    services::{resize::ResizeTask, ResizeService},
+    web_sys::Element,
+};
 
 pub enum Msg {
     Resize,
@@ -20,9 +25,8 @@ pub enum Msg {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
-    pub time_from: i64,
-    pub time_to: i64,
-    pub step: i64,
+    pub time: Range<DateTime<Utc>>,
+    pub time_step: Duration,
     pub x1: u32,
     pub x2: u32,
     pub y1: u32,
@@ -66,14 +70,18 @@ impl Component for HorizontalTimeAxis {
     fn view(&self) -> Html {
         let p = &self.props;
 
-        let range = p.time_to - p.time_from;
+        let time_from = p.time.start.timestamp();
+        let time_to = p.time.end.timestamp();
+        let step = p.time_step.num_seconds();
+
+        let range = time_to - time_from;
         let scale = (p.x2 - p.x1) as f32 / range as f32;
 
         html! {
             <svg ref=self.svg.clone() class={"time-axis-x"}>
                 <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x2.to_string()} y2={p.y1.to_string()} class="line" />
-                { for ((p.time_from + p.step)..p.time_to).step_by(p.step as usize).map(|i| {
-                    let x = (p.x1 as f32 + ((i - p.time_from) as f32 * scale)) as u32;
+                { for ((time_from + step)..time_to).step_by(step as usize).map(|i| {
+                    let x = (p.x1 as f32 + ((i - time_from) as f32 * scale)) as u32;
                     let y = p.y1;
                     let to_y = y + p.tick_len;
                     let utc_date_time = NaiveDateTime::from_timestamp(i, 0);

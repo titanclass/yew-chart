@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 /// A VerticalAxis represents a range of i32 values. The tick interval of that range is expressed
 /// as a step. The axis also has an orientation describing which side of the axis should be used
 /// to convey its optional title.
@@ -30,9 +32,8 @@ pub enum Orientation {
 pub struct Props {
     pub name: String,
     pub orientation: Orientation,
-    pub range_from: f32,
-    pub range_to: f32,
-    pub range_step: f32,
+    pub scale: Range<f32>,
+    pub scale_step: f32,
     pub x1: u32,
     pub y1: u32,
     pub y2: u32,
@@ -77,12 +78,16 @@ impl Component for VerticalAxis {
     fn view(&self) -> Html {
         let p = &self.props;
 
-        let range = p.range_to - p.range_from;
+        let range_from = &p.scale.start;
+        let range_to = &p.scale.end;
+        let range_step = &p.scale_step;
+
+        let range = range_to - range_from;
         let scale = (p.y2 - p.y1) as f32 / range;
 
-        let range_from = (p.range_from * 100.0) as u32;
-        let range_to = (p.range_to * 100.0) as u32;
-        let range_step = (p.range_step * 100.0) as u32;
+        let range_from = (range_from * 100.0) as u32;
+        let range_to = (range_to * 100.0) as u32;
+        let range_step = (range_step * 100.0) as u32;
 
         html! {
             <svg ref=self.svg.clone() class={classes!("axis-y", p.name.to_owned())}>
@@ -95,7 +100,7 @@ impl Component for VerticalAxis {
                     } else {
                         x + p.tick_len
                     };
-                    let y = (p.y1 as f32 + ((range - i) as f32 + p.range_from) * scale) as u32;
+                    let y = (p.y1 as f32 + ((range - i) as f32 + p.scale.start) * scale) as u32;
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={to_x.to_string()} y2={y.to_string()} class="tick" />

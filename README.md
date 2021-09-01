@@ -16,6 +16,38 @@ Here is a very basic chart produced by the examples/basic project:
 
 ![Sample chart](./basic-chart.png "A basic chart")
 
+...and here's the essence of the Yew view method code that was used to generate it:
+
+```rust
+fn view(&self) -> yew::Html {
+    html! {
+        <svg class="chart" viewBox=format!("0 0 {} {}", WIDTH, HEIGHT) preserveAspectRatio="none">
+            <HorizontalTimeSeries
+                series_type=horizontal_time_series::SeriesType::Line
+                name="some-series"
+                data=Rc::clone(&self.data_set)
+                time=self.time.to_owned() time_step=Duration::days(1)
+                scale=0.0..5.0
+                x=MARGIN y=MARGIN width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
+
+            <VerticalAxis
+                name="some-y-axis"
+                orientation=vertical_axis::Orientation::Left
+                scale=0.0..5.0 scale_step=0.5
+                x1=MARGIN y1=MARGIN y2={HEIGHT - MARGIN}
+                tick_len=TICK_LENGTH
+                title="Some Y thing".to_string() />
+
+            <HorizontalTimeAxis
+                time=self.time.to_owned() time_step=Duration::days(1)
+                x1=MARGIN y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
+                tick_len=TICK_LENGTH />
+
+        </svg>
+    }
+}
+```
+
 ## Contribution policy
 
 Contributions via GitHub pull requests are gladly accepted from their original author. Along with any pull requests, please state that the contribution is your original work and that you license the work to the project under the project's open source license. Whether or not you state this explicitly, by submitting any copyrighted material via pull request, email, or other means you agree to license the material under the project's open source license and warrant that you have the legal authority to do so.
