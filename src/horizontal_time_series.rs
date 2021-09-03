@@ -111,7 +111,7 @@ impl HorizontalTimeSeries {
                         let y2 = props.height + props.y;
                         if y1 != y2 {
                             svg_elements.push(
-                            html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
+                            html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
                         }
                     }
                 }
@@ -147,7 +147,7 @@ impl HorizontalTimeSeries {
                 let y2 = props.height + props.y;
                 if y1 != y2 {
                     svg_elements.push(
-                    html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
+                    html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
                 }
             }
         }
@@ -163,8 +163,8 @@ impl HorizontalTimeSeries {
                 svg_elements.push(
                     html! {
                         <>
-                        <circle cx={x.to_string()} cy={y.to_string()} r={circle_radius.to_string()} />
-                        <text x={x.to_string()} y={(y  - DATA_LABEL_OFFSET).to_string()} class={classes.to_owned()}>{label}</text>
+                        <circle cx=x.to_string() cy=y.to_string() r=circle_radius.to_string() />
+                        <text x=x.to_string() y=(y  - DATA_LABEL_OFFSET).to_string() class=classes.to_owned()>{label}</text>
                         </>
                     })
             }
@@ -209,7 +209,7 @@ impl Component for HorizontalTimeSeries {
 
         html! {
             <svg ref=self.svg.clone()>
-                <line x1={p.x.to_string()} x2={(p.x + p.width).to_string()} y1=0 y2=0 />
+                <line x1=p.x.to_string() x2=(p.x + p.width).to_string() y1=0 y2=0 />
                 { self.derived_props.svg_elements.to_owned() }
             </svg>
         }

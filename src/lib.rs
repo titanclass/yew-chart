@@ -4,4 +4,5 @@
 
 pub mod horizontal_time_axis;
 pub mod horizontal_time_series;
+pub mod horizontal_axis;
 pub mod vertical_axis;
