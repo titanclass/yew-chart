@@ -3,6 +3,6 @@
 /// with a great deal of flexibility.
 
 pub mod horizontal_time_axis;
-pub mod horizontal_time_series;
 pub mod horizontal_axis;
+pub mod horizontal_series;
 pub mod vertical_axis;

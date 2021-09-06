@@ -7,8 +7,8 @@ use std::{
 use chrono::{DateTime, Duration, Utc};
 use yew::prelude::*;
 use yew_chart::{
+    horizontal_series::{self, HorizontalSeries},
     horizontal_time_axis::HorizontalTimeAxis,
-    horizontal_time_series::{self, HorizontalTimeSeries},
     vertical_axis::{self, VerticalAxis},
 };
 
@@ -18,7 +18,7 @@ const MARGIN: u32 = 50;
 const TICK_LENGTH: u32 = 10;
 
 struct App {
-    data_set: Rc<Vec<(i64, f32)>>,
+    data_set: Rc<Vec<(f32, f32)>>,
     time: Range<DateTime<Utc>>,
 }
 
@@ -32,11 +32,11 @@ impl Component for App {
         let start_date = end_date.sub(Duration::days(4));
         App {
             data_set: Rc::new(vec![
-                (start_date.timestamp(), 1.0),
-                (start_date.add(Duration::days(1)).timestamp(), 4.0),
-                (start_date.add(Duration::days(2)).timestamp(), 3.0),
-                (start_date.add(Duration::days(3)).timestamp(), 2.0),
-                (start_date.add(Duration::days(4)).timestamp(), 5.0),
+                (start_date.timestamp() as f32, 1.0),
+                (start_date.add(Duration::days(1)).timestamp() as f32, 4.0),
+                (start_date.add(Duration::days(2)).timestamp() as f32, 3.0),
+                (start_date.add(Duration::days(3)).timestamp() as f32, 2.0),
+                (start_date.add(Duration::days(4)).timestamp() as f32, 5.0),
             ]),
             time: start_date..end_date,
         }
@@ -53,12 +53,13 @@ impl Component for App {
     fn view(&self) -> yew::Html {
         html! {
             <svg class="chart" viewBox=format!("0 0 {} {}", WIDTH, HEIGHT) preserveAspectRatio="none">
-                <HorizontalTimeSeries
-                    series_type=horizontal_time_series::SeriesType::Line
+                <HorizontalSeries
+                    series_type=horizontal_series::SeriesType::Line
                     name="some-series"
                     data=Rc::clone(&self.data_set)
-                    time=self.time.to_owned() time_step=Duration::days(1)
-                    scale=0.0..5.0
+                    horizontal_scale=self.time.start.timestamp() as f32..self.time.end.timestamp() as f32
+                    horizontal_scale_step=Duration::days(1).num_seconds() as f32
+                    vertical_scale=0.0..5.0
                     x=MARGIN y=MARGIN width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
 
                 <VerticalAxis

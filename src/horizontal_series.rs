@@ -1,14 +1,13 @@
-/// A HorizontalTimeSeries represents the data of a chat. Data is expressed as a vector of
-/// timestamp/float value tuples. As per the HorizontalTimeAxis, a range of timestamps is
-/// expressed along with a step. If there is a break in data where one or more steps are
+/// A Series represents the data of a chart. Data is expressed as a vector of
+/// data x/y float value tuples. A range of x is expressed along with a step. A range
+/// of y datum is also expressed. If there is a break in data where one or more steps are
 /// missed then any line being drawn will be stopped and then resumed accordingly.
-/// A line can be labelled at various places in time represented with a timestamp, a string
-/// label and a float value at that point.
+/// A line can be labelled at various places in time represented at x, y, and a string
+/// label for that point.
 ///
 /// A name is associated with the series to facilitate styling.
 use std::{cmp, ops::Range, rc::Rc};
 
-use chrono::{DateTime, Duration, Utc};
 use wasm_bindgen::JsCast;
 use yew::{
     prelude::*,
@@ -32,11 +31,11 @@ pub enum SeriesType {
 pub struct Props {
     pub series_type: SeriesType,
     pub name: String,
-    pub data: Rc<Vec<(i64, f32)>>,
-    pub data_labels: Option<Rc<Vec<(i64, String, f32)>>>,
-    pub time: Range<DateTime<Utc>>,
-    pub time_step: Duration,
-    pub scale: Range<f32>,
+    pub data: Rc<Vec<(f32, f32)>>,
+    pub data_labels: Option<Rc<Vec<(f32, f32, String)>>>,
+    pub horizontal_scale: Range<f32>,
+    pub horizontal_scale_step: f32,
+    pub vertical_scale: Range<f32>,
     pub x: u32,
     pub y: u32,
     pub height: u32,
@@ -52,9 +51,9 @@ impl PartialEq for Props {
                 (Some(labels), Some(other_labels)) => Rc::ptr_eq(labels, other_labels),
                 _ => false,
             }
-            && self.time == other.time
-            && self.scale == other.scale
-            && self.time_step == other.time_step
+            && self.horizontal_scale == other.horizontal_scale
+            && self.horizontal_scale_step == other.horizontal_scale_step
+            && self.vertical_scale == other.vertical_scale
             && self.x == other.x
             && self.y == other.y
             && self.height == other.height
@@ -66,21 +65,21 @@ struct DerivedProps {
     svg_elements: Vec<Html>,
 }
 
-pub struct HorizontalTimeSeries {
+pub struct HorizontalSeries {
     props: Props,
     derived_props: DerivedProps,
     _resize_task: ResizeTask,
     svg: NodeRef,
 }
 
-impl HorizontalTimeSeries {
+impl HorizontalSeries {
     fn derive_props(props: &Props) -> DerivedProps {
         let classes = classes!("horizontal-series", props.name.to_owned());
 
-        let x_range = props.time.end.timestamp() - props.time.start.timestamp();
-        let x_scale = props.width as f32 / x_range as f32;
+        let x_range = props.horizontal_scale.end - props.horizontal_scale.start;
+        let x_scale = props.width as f32 / x_range;
 
-        let y_range = props.scale.end - props.scale.start;
+        let y_range = props.vertical_scale.end - props.vertical_scale.start;
         let y_scale = props.height as f32 / y_range;
 
         let mut svg_elements = Vec::<Html>::with_capacity(
@@ -90,11 +89,11 @@ impl HorizontalTimeSeries {
 
         let mut top_y = props.height;
 
-        let time_step = props.time_step.num_seconds();
-        let mut last_step_time = -time_step;
-        for (time, datum) in props.data.iter() {
-            let step_time = (time / time_step) * time_step;
-            if step_time - last_step_time > time_step {
+        let data_step = props.horizontal_scale_step;
+        let mut last_data_step = -data_step;
+        for (data_x, data_y) in props.data.iter() {
+            let step = (data_x / data_step) * data_step;
+            if step - last_data_step > data_step {
                 if props.series_type == SeriesType::Line {
                     let points = element_points
                         .iter()
@@ -118,19 +117,19 @@ impl HorizontalTimeSeries {
                 element_points.clear();
             }
             let x = cmp::min(
-                ((*time - props.time.start.timestamp()) as f32 * x_scale) as u32,
+                ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
                 props.width,
             ) + props.x;
             let y = (props.height
                 - cmp::min(
-                    ((*datum - props.scale.start) * y_scale) as u32,
+                    ((*data_y - props.vertical_scale.start) * y_scale) as u32,
                     props.height,
                 ))
                 + props.y;
             top_y = cmp::min(top_y, y);
             element_points.push((x, y));
 
-            last_step_time = step_time;
+            last_data_step = step;
         }
         if props.series_type == SeriesType::Line {
             let points = element_points
@@ -154,12 +153,13 @@ impl HorizontalTimeSeries {
 
         if let Some(data_labels) = props.data_labels.as_ref() {
             let circle_radius = DATA_LABEL_OFFSET >> 1;
-            for (time, label, datum) in data_labels.iter() {
+            for (data_x, data_y, label) in data_labels.iter() {
                 let x = cmp::min(
-                    ((*time - props.time.start.timestamp()) as f32 * x_scale) as u32,
+                    ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
                     props.width,
                 ) + props.x;
-                let y = props.height - ((*datum - props.scale.start) * y_scale) as u32 + props.y;
+                let y = props.height - ((*data_y - props.vertical_scale.start) * y_scale) as u32
+                    + props.y;
                 svg_elements.push(
                     html! {
                         <>
@@ -174,13 +174,13 @@ impl HorizontalTimeSeries {
     }
 }
 
-impl Component for HorizontalTimeSeries {
+impl Component for HorizontalSeries {
     type Message = Msg;
 
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        HorizontalTimeSeries {
+        HorizontalSeries {
             derived_props: Self::derive_props(&props),
             props,
             _resize_task: ResizeService::register(link.callback(|_| Msg::Resize)),
