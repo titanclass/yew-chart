@@ -34,5 +34,10 @@
     .horizontal-series.some-series {
         stroke: green;
         stroke-width: 2px;
+
+        text {
+            stroke: none;
+            stroke-width: 1px;
+        }
     }
 }

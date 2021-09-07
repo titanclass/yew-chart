@@ -22,12 +22,14 @@ Here is a very basic chart produced by the examples/basic project:
 fn view(&self) -> yew::Html {
     html! {
         <svg class="chart" viewBox=format!("0 0 {} {}", WIDTH, HEIGHT) preserveAspectRatio="none">
-            <HorizontalTimeSeries
-                series_type=horizontal_time_series::SeriesType::Line
+            <HorizontalSeries
+                series_type=horizontal_series::SeriesType::Line
                 name="some-series"
                 data=Rc::clone(&self.data_set)
-                time=self.time.to_owned() time_step=Duration::days(1)
-                scale=0.0..5.0
+                data_labels=Some(Rc::clone(&self.data_set_labels))
+                horizontal_scale=self.time.start.timestamp() as f32..self.time.end.timestamp() as f32
+                horizontal_scale_step=Duration::days(1).num_seconds() as f32
+                vertical_scale=0.0..5.0
                 x=MARGIN y=MARGIN width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
 
             <VerticalAxis
