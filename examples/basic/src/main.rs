@@ -7,7 +7,7 @@ use std::{
 use chrono::{DateTime, Duration, Utc};
 use yew::prelude::*;
 use yew_chart::{
-    horizontal_series::{self, HorizontalSeries},
+    horizontal_series::{self, HorizontalSeries, SeriesData, SeriesDataLabelled},
     horizontal_time_axis::HorizontalTimeAxis,
     vertical_axis::{self, VerticalAxis},
 };
@@ -18,7 +18,8 @@ const MARGIN: u32 = 50;
 const TICK_LENGTH: u32 = 10;
 
 struct App {
-    data_set: Rc<Vec<(f32, f32)>>,
+    data_set: Rc<SeriesData>,
+    data_set_labels: Rc<SeriesDataLabelled>,
     time: Range<DateTime<Utc>>,
 }
 
@@ -38,6 +39,11 @@ impl Component for App {
                 (start_date.add(Duration::days(3)).timestamp() as f32, 2.0),
                 (start_date.add(Duration::days(4)).timestamp() as f32, 5.0),
             ]),
+            data_set_labels: Rc::new(vec![(
+                start_date.add(Duration::days(4)).timestamp() as f32,
+                5.0,
+                horizontal_series::label("Label"),
+            )]),
             time: start_date..end_date,
         }
     }
@@ -57,6 +63,7 @@ impl Component for App {
                     series_type=horizontal_series::SeriesType::Line
                     name="some-series"
                     data=Rc::clone(&self.data_set)
+                    data_labels=Some(Rc::clone(&self.data_set_labels))
                     horizontal_scale=self.time.start.timestamp() as f32..self.time.end.timestamp() as f32
                     horizontal_scale_step=Duration::days(1).num_seconds() as f32
                     vertical_scale=0.0..5.0

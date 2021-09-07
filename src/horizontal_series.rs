@@ -15,7 +15,25 @@ use yew::{
     web_sys::{Element, SvgElement},
 };
 
+pub type SeriesData = Vec<(f32, f32)>;
+pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
+pub type SeriesDataLabeller = dyn Fn(u32, u32) -> Html;
+
 const DATA_LABEL_OFFSET: u32 = 3;
+const CIRCLE_RADIUS: u32 = DATA_LABEL_OFFSET >> 1;
+
+// A convenience for using a string as a label along with a circle dot.
+pub fn label(text: &str) -> Box<SeriesDataLabeller> {
+    let t = text.to_string();
+    Box::new(move |x, y| {
+        html! {
+            <>
+            <circle cx=x.to_string() cy=y.to_string() r=CIRCLE_RADIUS.to_string() />
+            <text x=x.to_string() y=(y - DATA_LABEL_OFFSET).to_string()>{t.to_owned()}</text>
+            </>
+        }
+    })
+}
 
 pub enum Msg {
     Resize,
@@ -29,17 +47,17 @@ pub enum SeriesType {
 
 #[derive(Properties, Clone)]
 pub struct Props {
-    pub series_type: SeriesType,
-    pub name: String,
-    pub data: Rc<Vec<(f32, f32)>>,
-    pub data_labels: Option<Rc<Vec<(f32, f32, String)>>>,
+    pub data: Rc<SeriesData>,
+    pub data_labels: Option<Rc<SeriesDataLabelled>>,
+    pub height: u32,
     pub horizontal_scale: Range<f32>,
     pub horizontal_scale_step: f32,
+    pub name: String,
+    pub series_type: SeriesType,
     pub vertical_scale: Range<f32>,
+    pub width: u32,
     pub x: u32,
     pub y: u32,
-    pub height: u32,
-    pub width: u32,
 }
 
 impl PartialEq for Props {
@@ -85,74 +103,77 @@ impl HorizontalSeries {
         let mut svg_elements = Vec::<Html>::with_capacity(
             props.data.len() + props.data_labels.as_ref().map(|d| d.len()).unwrap_or(0),
         );
-        let mut element_points = Vec::<(u32, u32)>::with_capacity(props.data.len());
 
-        let mut top_y = props.height;
+        if props.data.len() > 0 {
+            let mut element_points = Vec::<(u32, u32)>::with_capacity(props.data.len());
 
-        let data_step = props.horizontal_scale_step;
-        let mut last_data_step = -data_step;
-        for (data_x, data_y) in props.data.iter() {
-            let step = (data_x / data_step) * data_step;
-            if step - last_data_step > data_step {
-                if props.series_type == SeriesType::Line {
-                    let points = element_points
-                        .iter()
-                        .map(|(x, y)| format!("{},{} ", x, y))
-                        .collect::<String>();
-                    svg_elements.push(
-                        html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
-                    );
-                } else {
-                    for point in element_points.iter() {
-                        let x1 = point.0;
-                        let y1 = point.1;
-                        let x2 = x1;
-                        let y2 = props.height + props.y;
-                        if y1 != y2 {
-                            svg_elements.push(
-                            html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+            let mut top_y = props.height;
+
+            let data_step = props.horizontal_scale_step;
+            let mut last_data_step = -data_step;
+            for (data_x, data_y) in props.data.iter() {
+                let step = (data_x / data_step) * data_step;
+                if step - last_data_step > data_step {
+                    if props.series_type == SeriesType::Line {
+                        let points = element_points
+                            .iter()
+                            .map(|(x, y)| format!("{},{} ", x, y))
+                            .collect::<String>();
+                        svg_elements.push(
+                            html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
+                        );
+                    } else {
+                        for point in element_points.iter() {
+                            let x1 = point.0;
+                            let y1 = point.1;
+                            let x2 = x1;
+                            let y2 = props.height + props.y;
+                            if y1 != y2 {
+                                svg_elements.push(
+                                html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+                            }
                         }
                     }
+                    element_points.clear();
                 }
-                element_points.clear();
-            }
-            let x = cmp::min(
-                ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
-                props.width,
-            ) + props.x;
-            let y = (props.height
-                - cmp::min(
-                    ((*data_y - props.vertical_scale.start) * y_scale) as u32,
-                    props.height,
-                ))
-                + props.y;
-            top_y = cmp::min(top_y, y);
-            element_points.push((x, y));
+                let x = cmp::min(
+                    ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
+                    props.width,
+                ) + props.x;
+                let y = (props.height
+                    - cmp::min(
+                        ((*data_y - props.vertical_scale.start) * y_scale) as u32,
+                        props.height,
+                    ))
+                    + props.y;
+                top_y = cmp::min(top_y, y);
+                element_points.push((x, y));
 
-            last_data_step = step;
-        }
-        if props.series_type == SeriesType::Line {
-            let points = element_points
-                .iter()
-                .map(|(x, y)| format!("{},{} ", x, y))
-                .collect::<String>();
-            svg_elements
-                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
-        } else {
-            for point in element_points.iter() {
-                let x1 = point.0;
-                let y1 = point.1;
-                let x2 = x1;
-                let y2 = props.height + props.y;
-                if y1 != y2 {
-                    svg_elements.push(
-                    html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+                last_data_step = step;
+            }
+            if props.series_type == SeriesType::Line {
+                let points = element_points
+                    .iter()
+                    .map(|(x, y)| format!("{},{} ", x, y))
+                    .collect::<String>();
+                svg_elements.push(
+                    html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
+                );
+            } else {
+                for point in element_points.iter() {
+                    let x1 = point.0;
+                    let y1 = point.1;
+                    let x2 = x1;
+                    let y2 = props.height + props.y;
+                    if y1 != y2 {
+                        svg_elements.push(
+                        html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+                    }
                 }
             }
         }
 
         if let Some(data_labels) = props.data_labels.as_ref() {
-            let circle_radius = DATA_LABEL_OFFSET >> 1;
             for (data_x, data_y, label) in data_labels.iter() {
                 let x = cmp::min(
                     ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
@@ -160,13 +181,11 @@ impl HorizontalSeries {
                 ) + props.x;
                 let y = props.height - ((*data_y - props.vertical_scale.start) * y_scale) as u32
                     + props.y;
-                svg_elements.push(
-                    html! {
-                        <>
-                        <circle cx=x.to_string() cy=y.to_string() r=circle_radius.to_string() />
-                        <text x=x.to_string() y=(y  - DATA_LABEL_OFFSET).to_string() class=classes.to_owned()>{label}</text>
-                        </>
-                    })
+                svg_elements.push(html! {
+                    <g class=classes.to_owned()>
+                        {label(x, y)}
+                    </g>
+                })
             }
         }
 
