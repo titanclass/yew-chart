@@ -7,6 +7,10 @@ Here is a soil moisture/rainfall chart that has been produced using this library
 
 ![Moisture/rainfall chart](./rainfall-moisture-chart.png "Soil moisture/rainfall chart")
 
+Here's another chart produced by this library, representing what is known as ["Delta-T"](http://www.bom.gov.au/lam/deltat.shtml):
+
+![Delta-T chart](./delta-t.png "Delta-T chart")
+
 By leveraging these SVG-based components many types of charts can be formed
 with a great deal of flexibility. The library is intended as a toolkit that
 provides conveniences for rendering chart primitives. These primitives can
