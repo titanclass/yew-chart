@@ -11,13 +11,11 @@
 /// *   tick - the axis tick line
 /// *   text - the axis text
 use std::ops::Range;
+
+use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
-use web_sys::SvgElement;
-use yew::{
-    prelude::*,
-    services::{resize::ResizeTask, ResizeService},
-    web_sys::Element,
-};
+use web_sys::{Element, SvgElement};
+use yew::prelude::*;
 
 pub enum Msg {
     Resize,
@@ -43,8 +41,7 @@ pub struct Props {
 }
 
 pub struct HorizontalAxis {
-    props: Props,
-    _resize_task: ResizeTask,
+    _resize_listener: Option<EventListener>,
     svg: NodeRef,
 }
 
@@ -53,31 +50,25 @@ impl Component for HorizontalAxis {
 
     type Properties = Props;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         HorizontalAxis {
-            props,
-            _resize_task: ResizeService::register(link.callback(|_| Msg::Resize)),
+            _resize_listener: None,
             svg: NodeRef::default(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Resize => true,
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if props != self.props {
-            self.props = props;
-            true
-        } else {
-            false
-        }
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
+        true
     }
 
-    fn view(&self) -> Html {
-        let p = &self.props;
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let p = ctx.props();
 
         let range_from = &p.scale.start;
         let range_to = &p.scale.end;
@@ -91,8 +82,8 @@ impl Component for HorizontalAxis {
         let range_step = (range_step * 100.0) as u32;
 
         html! {
-            <svg ref=self.svg.clone() class={classes!("axis-x", p.name.to_owned())}>
-                <line x1=p.x1.to_string() y1=p.y1.to_string() x2=p.x2.to_string() y2=p.y1.to_string() class="line" />
+            <svg ref={self.svg.clone()} class={classes!("axis-x", p.name.to_owned())}>
+                <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x2.to_string()} y2={p.y1.to_string()} class="line" />
                 { for (range_from..=range_to).step_by(range_step as usize).map(|i| {
                     let i = i as f32 / 100.0;
                     let y = p.y1;
@@ -104,8 +95,8 @@ impl Component for HorizontalAxis {
                     let x = (p.x1 as f32 + (i as f32 + p.scale.start) * scale) as u32;
                     html! {
                     <>
-                        <line x1=x.to_string() y1=y.to_string() x2=x.to_string() y2=to_y.to_string() class="tick" />
-                        <text x=(x + 1).to_string() y=to_y.to_string() text-anchor="start" class="text">{i}</text>
+                        <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
+                        <text x={(x + 1).to_string()} y={to_y.to_string()} text-anchor="start" class="text">{i}</text>
                     </>
                     }
                 }) }
@@ -119,7 +110,7 @@ impl Component for HorizontalAxis {
                     let x = p.x1 + ((p.x2 - p.x1) >> 1);
                     html! {
                         <text
-                            x=x.to_string() y=y.to_string()
+                            x={x.to_string()} y={y.to_string()}
                             text-anchor={"middle"}
                             class="title" >
                             <tspan>{"\u{25ac}\u{25ac} "}</tspan>{t}
@@ -130,8 +121,8 @@ impl Component for HorizontalAxis {
         }
     }
 
-    fn rendered(&mut self, _first_render: bool) {
-        let p = &self.props;
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
+        let p = ctx.props();
 
         let element = self.svg.cast::<Element>().unwrap();
         if let Some(svg_element) = element
@@ -144,6 +135,10 @@ impl Component for HorizontalAxis {
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
+            let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
+            self._resize_listener = Some(EventListener::new(&svg_element, "resize", move |e| {
+                on_resize.emit(e.clone())
+            }));
         }
     }
 }

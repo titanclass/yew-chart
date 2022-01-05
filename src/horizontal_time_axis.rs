@@ -12,13 +12,11 @@ use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 /// *   tick - the axis tick line
 /// *   text - the axis text
 use std::ops::Range;
+
+use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
-use web_sys::SvgElement;
-use yew::{
-    prelude::*,
-    services::{resize::ResizeTask, ResizeService},
-    web_sys::Element,
-};
+use web_sys::{Element, SvgElement};
+use yew::prelude::*;
 
 pub enum Msg {
     Resize,
@@ -35,8 +33,7 @@ pub struct Props {
 }
 
 pub struct HorizontalTimeAxis {
-    props: Props,
-    _resize_task: ResizeTask,
+    _resize_listener: Option<EventListener>,
     svg: NodeRef,
 }
 
@@ -45,31 +42,25 @@ impl Component for HorizontalTimeAxis {
 
     type Properties = Props;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         HorizontalTimeAxis {
-            props,
-            _resize_task: ResizeService::register(link.callback(|_| Msg::Resize)),
+            _resize_listener: None,
             svg: NodeRef::default(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Resize => true,
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if props != self.props {
-            self.props = props;
-            true
-        } else {
-            false
-        }
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
+        true
     }
 
-    fn view(&self) -> Html {
-        let p = &self.props;
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let p = ctx.props();
 
         let time_from = p.time.start.timestamp();
         let time_to = p.time.end.timestamp();
@@ -79,8 +70,8 @@ impl Component for HorizontalTimeAxis {
         let scale = (p.x2 - p.x1) as f32 / range as f32;
 
         html! {
-            <svg ref=self.svg.clone() class="time-axis-x">
-                <line x1=p.x1.to_string() y1=p.y1.to_string() x2=p.x2.to_string() y2=p.y1.to_string() class="line" />
+            <svg ref={self.svg.clone()} class="time-axis-x">
+                <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x2.to_string()} y2={p.y1.to_string()} class="line" />
                 { for ((time_from + step)..time_to).step_by(step as usize).map(|i| {
                     let x = (p.x1 as f32 + ((i - time_from) as f32 * scale)) as u32;
                     let y = p.y1;
@@ -90,8 +81,8 @@ impl Component for HorizontalTimeAxis {
                     let date_str = local_date_time.format("%d-%b");
                     html! {
                     <>
-                        <line x1=x.to_string() y1=y.to_string() x2=x.to_string() y2=to_y.to_string() class="tick" />
-                        <text x=x.to_string() y=to_y.to_string() transform=format!("rotate(45, {}, {})", x, to_y + 1)>{date_str}</text>
+                        <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
+                        <text x={x.to_string()} y={to_y.to_string()} transform={format!("rotate(45, {}, {})", x, to_y + 1)}>{date_str}</text>
                     </>
                     }
                 }) }
@@ -99,8 +90,8 @@ impl Component for HorizontalTimeAxis {
         }
     }
 
-    fn rendered(&mut self, _first_render: bool) {
-        let p = &self.props;
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
+        let p = ctx.props();
 
         let element = self.svg.cast::<Element>().unwrap();
         if let Some(svg_element) = element
@@ -113,6 +104,10 @@ impl Component for HorizontalTimeAxis {
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
+            let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
+            self._resize_listener = Some(EventListener::new(&svg_element, "resize", move |e| {
+                on_resize.emit(e.clone())
+            }));
         }
     }
 }

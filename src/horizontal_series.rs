@@ -8,12 +8,10 @@
 /// A name is associated with the series to facilitate styling.
 use std::{cmp, ops::Range, rc::Rc};
 
+use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
-use yew::{
-    prelude::*,
-    services::{resize::ResizeTask, ResizeService},
-    web_sys::{Element, SvgElement},
-};
+use web_sys::{Element, SvgElement};
+use yew::prelude::*;
 
 pub type SeriesData = Vec<(f32, f32)>;
 pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
@@ -28,8 +26,8 @@ pub fn label(text: &str) -> Box<SeriesDataLabeller> {
     Box::new(move |x, y| {
         html! {
             <>
-            <circle cx=x.to_string() cy=y.to_string() r=CIRCLE_RADIUS.to_string() />
-            <text x=x.to_string() y=(y - DATA_LABEL_OFFSET).to_string()>{t.to_owned()}</text>
+            <circle cx={x.to_string()} cy={y.to_string()} r={CIRCLE_RADIUS.to_string()} />
+            <text x={x.to_string()} y={(y - DATA_LABEL_OFFSET).to_string()}>{t.to_owned()}</text>
             </>
         }
     })
@@ -84,9 +82,8 @@ struct DerivedProps {
 }
 
 pub struct HorizontalSeries {
-    props: Props,
     derived_props: DerivedProps,
-    _resize_task: ResizeTask,
+    _resize_listener: Option<EventListener>,
     svg: NodeRef,
 }
 
@@ -130,7 +127,7 @@ impl HorizontalSeries {
                             let y2 = props.height + props.y;
                             if y1 != y2 {
                                 svg_elements.push(
-                                html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+                                html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
                             }
                         }
                     }
@@ -167,7 +164,7 @@ impl HorizontalSeries {
                     let y2 = props.height + props.y;
                     if y1 != y2 {
                         svg_elements.push(
-                        html!(<line x1=x1.to_string() y1=y1.to_string() x2=x2.to_string() y2=y2.to_string() class=classes.to_owned()/>));
+                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
                     }
                 }
             }
@@ -182,7 +179,7 @@ impl HorizontalSeries {
                 let y = props.height - ((*data_y - props.vertical_scale.start) * y_scale) as u32
                     + props.y;
                 svg_elements.push(html! {
-                    <g class=classes.to_owned()>
+                    <g class={classes.to_owned()}>
                         {label(x, y)}
                     </g>
                 })
@@ -198,44 +195,37 @@ impl Component for HorizontalSeries {
 
     type Properties = Props;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         HorizontalSeries {
-            derived_props: Self::derive_props(&props),
-            props,
-            _resize_task: ResizeService::register(link.callback(|_| Msg::Resize)),
+            derived_props: Self::derive_props(ctx.props()),
+            _resize_listener: None,
             svg: NodeRef::default(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Resize => true,
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if props != self.props {
-            self.derived_props = Self::derive_props(&props);
-            self.props = props;
-            true
-        } else {
-            false
-        }
+    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
+        true
     }
 
-    fn view(&self) -> Html {
-        let p = &self.props;
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let p = ctx.props();
 
         html! {
-            <svg ref=self.svg.clone()>
-                <line x1=p.x.to_string() x2=(p.x + p.width).to_string() y1=0 y2=0 />
+            <svg ref={self.svg.clone()}>
+                <line x1={p.x.to_string()} x2={(p.x + p.width).to_string()} y1=0 y2=0 />
                 { self.derived_props.svg_elements.to_owned() }
             </svg>
         }
     }
 
-    fn rendered(&mut self, _first_render: bool) {
-        let p = &self.props;
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
+        let p = ctx.props();
 
         let element = self.svg.cast::<Element>().unwrap();
         if let Some(svg_element) = element
@@ -248,6 +238,10 @@ impl Component for HorizontalSeries {
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
+            let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
+            self._resize_listener = Some(EventListener::new(&svg_element, "resize", move |e| {
+                on_resize.emit(e.clone())
+            }));
         }
     }
 }
