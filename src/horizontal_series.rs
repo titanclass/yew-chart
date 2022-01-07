@@ -41,6 +41,7 @@ pub enum Msg {
 pub enum SeriesType {
     Line,
     Bar,
+    Scatter,
 }
 
 #[derive(Properties, Clone)]
@@ -119,7 +120,7 @@ impl HorizontalSeries {
                         svg_elements.push(
                             html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
                         );
-                    } else {
+                    } else if props.series_type == SeriesType::Bar {
                         for point in element_points.iter() {
                             let x1 = point.0;
                             let y1 = point.1;
@@ -127,8 +128,17 @@ impl HorizontalSeries {
                             let y2 = props.height + props.y;
                             if y1 != y2 {
                                 svg_elements.push(
-                                html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
+                                    html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
+                                );
                             }
+                        }
+                    } else if props.series_type == SeriesType::Scatter {
+                        for point in element_points.iter() {
+                            let x1 = point.0;
+                            let y1 = point.1;
+                            svg_elements.push(
+                                html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>),
+                            );
                         }
                     }
                     element_points.clear();
@@ -156,7 +166,7 @@ impl HorizontalSeries {
                 svg_elements.push(
                     html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
                 );
-            } else {
+            } else if props.series_type == SeriesType::Bar {
                 for point in element_points.iter() {
                     let x1 = point.0;
                     let y1 = point.1;
@@ -164,8 +174,16 @@ impl HorizontalSeries {
                     let y2 = props.height + props.y;
                     if y1 != y2 {
                         svg_elements.push(
-                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
+                            html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
+                        );
                     }
+                }
+            } else if props.series_type == SeriesType::Scatter {
+                for point in element_points.iter() {
+                    let x1 = point.0;
+                    let y1 = point.1;
+                    svg_elements
+                        .push(html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>));
                 }
             }
         }
