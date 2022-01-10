@@ -74,7 +74,7 @@ Using the same Yew view method code as above, `series_type` within the `Horizont
 
 `examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts.
 
-Instead of using the separate `SeriesType` key to select a scatter plot, the scatter plot is created by taking advantage of the `data_set_labels` property within `HorizontalSeries`.
+Instead of using the separate `SeriesType` key to select a scatter plot, the scatter plot is created by taking advantage of the `data_labels` property within `HorizontalSeries`.
 
 Since each label by default is composed of a circle and a textbox, a dataset of labels is created within `main.rs`, where for each datapoint that <em>shouldn't</em> have a label, that label is left empty.
 
