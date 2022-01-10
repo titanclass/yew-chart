@@ -112,33 +112,37 @@ impl HorizontalSeries {
             for (data_x, data_y) in props.data.iter() {
                 let step = (data_x / data_step) * data_step;
                 if step - last_data_step > data_step {
-                    if props.series_type == SeriesType::Line {
-                        let points = element_points
-                            .iter()
-                            .map(|(x, y)| format!("{},{} ", x, y))
-                            .collect::<String>();
-                        svg_elements.push(
-                            html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
-                        );
-                    } else if props.series_type == SeriesType::Bar {
-                        for point in element_points.iter() {
-                            let x1 = point.0;
-                            let y1 = point.1;
-                            let x2 = x1;
-                            let y2 = props.height + props.y;
-                            if y1 != y2 {
-                                svg_elements.push(
-                                    html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
-                                );
+                    match props.series_type {
+                        SeriesType::Line => {
+                            let points = element_points
+                                .iter()
+                                .map(|(x, y)| format!("{},{} ", x, y))
+                                .collect::<String>();
+                            svg_elements.push(
+                                html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
+                            );
+                        }
+                        SeriesType::Bar => {
+                            for point in element_points.iter() {
+                                let x1 = point.0;
+                                let y1 = point.1;
+                                let x2 = x1;
+                                let y2 = props.height + props.y;
+                                if y1 != y2 {
+                                    svg_elements.push(
+                                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
+                                    );
+                                }
                             }
                         }
-                    } else if props.series_type == SeriesType::Scatter {
-                        for point in element_points.iter() {
-                            let x1 = point.0;
-                            let y1 = point.1;
-                            svg_elements.push(
-                                html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>),
-                            );
+                        SeriesType::Scatter => {
+                            for point in element_points.iter() {
+                                let x1 = point.0;
+                                let y1 = point.1;
+                                svg_elements.push(
+                                    html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>),
+                                );
+                            }
                         }
                     }
                     element_points.clear();
@@ -158,32 +162,36 @@ impl HorizontalSeries {
 
                 last_data_step = step;
             }
-            if props.series_type == SeriesType::Line {
-                let points = element_points
-                    .iter()
-                    .map(|(x, y)| format!("{},{} ", x, y))
-                    .collect::<String>();
-                svg_elements.push(
-                    html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
-                );
-            } else if props.series_type == SeriesType::Bar {
-                for point in element_points.iter() {
-                    let x1 = point.0;
-                    let y1 = point.1;
-                    let x2 = x1;
-                    let y2 = props.height + props.y;
-                    if y1 != y2 {
-                        svg_elements.push(
-                            html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
-                        );
+            match props.series_type {
+                SeriesType::Line => {
+                    let points = element_points
+                        .iter()
+                        .map(|(x, y)| format!("{},{} ", x, y))
+                        .collect::<String>();
+                    svg_elements.push(
+                        html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
+                    );
+                }
+                SeriesType::Bar => {
+                    for point in element_points.iter() {
+                        let x1 = point.0;
+                        let y1 = point.1;
+                        let x2 = x1;
+                        let y2 = props.height + props.y;
+                        if y1 != y2 {
+                            svg_elements.push(
+                                html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
+                            );
+                        }
                     }
                 }
-            } else if props.series_type == SeriesType::Scatter {
-                for point in element_points.iter() {
-                    let x1 = point.0;
-                    let y1 = point.1;
-                    svg_elements
-                        .push(html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>));
+                SeriesType::Scatter => {
+                    for point in element_points.iter() {
+                        let x1 = point.0;
+                        let y1 = point.1;
+                        svg_elements
+                            .push(html!(<circle cx={x1.to_string()} cy={y1.to_string()} r="2"/>));
+                    }
                 }
             }
         }

@@ -56,7 +56,7 @@ impl Component for App {
         html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
                 <HorizontalSeries
-                    series_type={horizontal_series::SeriesType::Line}
+                    series_type={horizontal_series::SeriesType::Scatter}
                     name="some-series"
                     data={Rc::clone(&self.data_set)}
                     data_labels={Some(Rc::clone(&self.data_set_labels))}

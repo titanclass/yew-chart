@@ -5,20 +5,20 @@ for the [Yew framework](https://github.com/yewstack/yew).
 
 Here is a soil moisture/rainfall chart that has been produced using this library:
 
-![Moisture/rainfall chart](./rainfall-moisture-chart.png "Soil moisture/rainfall chart")
+<p align="center"><img src="./images/rainfall-moisture-chart.png " alt="Soil moisture/rainfall chart" width="70%" /></p>
 
 Here's another chart produced by this library, representing what is known as ["Delta-T"](http://www.bom.gov.au/lam/deltat.shtml):
 
-![Delta-T chart](./delta-t.png "Delta-T chart")
+<p align="center"><img src="./images/delta-t.png" alt="Delta-T chart" width="70%" /></p>
 
 By leveraging these SVG-based components many types of charts can be formed
 with a great deal of flexibility. The library is intended as a toolkit that
 provides conveniences for rendering chart primitives. These primitives can
 be regarded at a similar level as SVG's primitives i.e. lines, polygons etc.
 
-Here is a very basic chart produced by the examples/basic project:
+Here is a basic line chart produced by the examples/basic project:
 
-![Sample chart](./basic-chart.png "A basic chart")
+<p align="center"><img src="./images/basic-chart.png" alt="A line chart" width="70%" /></p>
 
 ...and here's the essence of the Yew view method code that was used to generate it:
 
@@ -27,7 +27,7 @@ fn view(&self) -> yew::Html {
     html! {
         <svg class="chart" viewBox=format!("0 0 {} {}", WIDTH, HEIGHT) preserveAspectRatio="none">
             <HorizontalSeries
-                series_type=horizontal_series::SeriesType::Line
+                series_type={horizontal_series::SeriesType::Line}
                 name="some-series"
                 data=Rc::clone(&self.data_set)
                 data_labels=Some(Rc::clone(&self.data_set_labels))
@@ -38,7 +38,7 @@ fn view(&self) -> yew::Html {
 
             <VerticalAxis
                 name="some-y-axis"
-                orientation=vertical_axis::Orientation::Left
+                orientation={vertical_axis::Orientation::Left}
                 scale=0.0..5.0 scale_step=0.5
                 x1=MARGIN y1=MARGIN y2={HEIGHT - MARGIN}
                 tick_len=TICK_LENGTH
@@ -53,6 +53,26 @@ fn view(&self) -> yew::Html {
     }
 }
 ```
+
+## Additional Plot Types
+
+Using the same Yew view method code as above, `series_type` within the `HorizontalSeries` tag can be edited to display a bar chart or a scatter plot by using the `Bar` or `Scatter` keys.
+
+### Bar Chart
+
+```rust
+<HorizontalSeries series_type={horizontal_series::SeriesType::Bar} ... />
+```
+
+<p align="center"><img src="./images/bar-chart.png" alt="A bar chart" width="70%" /></p>
+
+### Scatter Plot
+
+```rust
+<HorizontalSeries series_type={horizontal_series::SeriesType::Scatter} ... />
+```
+
+<p align="center"><img src="./images/scatter-plot.png" alt="A scatter plot" width="70%" /></p>
 
 ## Contribution policy
 
