@@ -1,6 +1,6 @@
-# Yew charting library
+# Yew Charting Library
 
-yew-chart is a collection of components that can be assembled to form charts
+`yew-chart` is a collection of components that can be assembled to form charts
 for the [Yew framework](https://github.com/yewstack/yew).
 
 Here is a soil moisture/rainfall chart that has been produced using this library:
@@ -16,49 +16,53 @@ with a great deal of flexibility. The library is intended as a toolkit that
 provides conveniences for rendering chart primitives. These primitives can
 be regarded at a similar level as SVG's primitives i.e. lines, polygons etc.
 
-Here is a basic line chart produced by the examples/basic project:
+## Example Plots
+
+Two basic projects are given in the `examples` folder.
+
+### Line Chart
+
+`examples/basic` is configured to output a basic line chart:
 
 <p align="center"><img src="./images/basic-chart.png" alt="A line chart" width="70%" /></p>
 
 ...and here's the essence of the Yew view method code that was used to generate it:
 
 ```rust
-fn view(&self) -> yew::Html {
+fn view(&self, _ctx: &Context<Self>) -> yew::Html {
     html! {
-        <svg class="chart" viewBox=format!("0 0 {} {}", WIDTH, HEIGHT) preserveAspectRatio="none">
+        <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
             <HorizontalSeries
                 series_type={horizontal_series::SeriesType::Line}
                 name="some-series"
-                data=Rc::clone(&self.data_set)
-                data_labels=Some(Rc::clone(&self.data_set_labels))
-                horizontal_scale=self.time.start.timestamp() as f32..self.time.end.timestamp() as f32
-                horizontal_scale_step=Duration::days(1).num_seconds() as f32
-                vertical_scale=0.0..5.0
-                x=MARGIN y=MARGIN width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
+                data={Rc::clone(&self.data_set)}
+                data_labels={Some(Rc::clone(&self.data_set_labels))}
+                horizontal_scale={self.time.start.timestamp() as f32..self.time.end.timestamp() as f32}
+                horizontal_scale_step={Duration::days(1).num_seconds() as f32}
+                vertical_scale={0.0..5.0}
+                x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
 
             <VerticalAxis
                 name="some-y-axis"
                 orientation={vertical_axis::Orientation::Left}
-                scale=0.0..5.0 scale_step=0.5
-                x1=MARGIN y1=MARGIN y2={HEIGHT - MARGIN}
-                tick_len=TICK_LENGTH
-                title="Some Y thing".to_string() />
+                scale={0.0..5.0} scale_step={0.5}
+                x1={MARGIN} y1={MARGIN} y2={HEIGHT - MARGIN}
+                tick_len={TICK_LENGTH}
+                title={"Some Y thing".to_string()} />
 
             <HorizontalTimeAxis
-                time=self.time.to_owned() time_step=Duration::days(1)
-                x1=MARGIN y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
-                tick_len=TICK_LENGTH />
+                time={self.time.to_owned()} time_step={Duration::days(1)}
+                x1={MARGIN} y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
+                tick_len={TICK_LENGTH} />
 
         </svg>
     }
 }
 ```
 
-## Additional Plot Types
-
-Using the same Yew view method code as above, `series_type` within the `HorizontalSeries` tag can be edited to display a bar chart or a scatter plot by using the `Bar` or `Scatter` keys.
-
 ### Bar Chart
+
+Using the same Yew view method code as above, `series_type` within the `HorizontalSeries` tag can be edited to display a bar chart instead by using the `Bar` keys.
 
 ```rust
 <HorizontalSeries series_type={horizontal_series::SeriesType::Bar} ... />
@@ -68,11 +72,33 @@ Using the same Yew view method code as above, `series_type` within the `Horizont
 
 ### Scatter Plot
 
+`examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts.
+
+Instead of using the separate `SeriesType` key to select a scatter plot, the scatter plot is created by taking advantage of the `data_set_labels` property within `HorizontalSeries`.
+
+Since each label by default is composed of a circle and a textbox, a dataset of labels is created within `main.rs`, where for each datapoint that <em>shouldn't</em> have a label, that label is left empty.
+
 ```rust
-<HorizontalSeries series_type={horizontal_series::SeriesType::Scatter} ... />
+//A label that will only show a point
+(
+    start_date.timestamp() as f32,
+    1.0,
+    horizontal_series::label(""),
+),
+
+//A label with text "Label"
+(
+    start_date.add(Duration::days(4)).timestamp() as f32,
+    5.0,
+    horizontal_series::label("Label"),
+),
 ```
 
+As such, the scatter plot is a series of labels, rather than a specific dataset.
+
 <p align="center"><img src="./images/scatter-plot.png" alt="A scatter plot" width="70%" /></p>
+
+If it is desired that a `Line` or `Bar` chart be added to the scatter plot, this may be added by providing data in `data_set`, as in the previous examples.
 
 ## Contribution policy
 

@@ -31,19 +31,36 @@ impl Component for App {
     fn create(_ctx: &Context<Self>) -> Self {
         let end_date = Utc::now();
         let start_date = end_date.sub(Duration::days(4));
+
         App {
-            data_set: Rc::new(vec![
-                (start_date.timestamp() as f32, 1.0),
-                (start_date.add(Duration::days(1)).timestamp() as f32, 4.0),
-                (start_date.add(Duration::days(2)).timestamp() as f32, 3.0),
-                (start_date.add(Duration::days(3)).timestamp() as f32, 2.0),
-                (start_date.add(Duration::days(4)).timestamp() as f32, 5.0),
+            data_set: Rc::new(vec![]),
+            data_set_labels: Rc::new(vec![
+                (
+                    start_date.timestamp() as f32,
+                    1.0,
+                    horizontal_series::label(""),
+                ),
+                (
+                    start_date.add(Duration::days(1)).timestamp() as f32,
+                    4.0,
+                    horizontal_series::label(""),
+                ),
+                (
+                    start_date.add(Duration::days(2)).timestamp() as f32,
+                    3.0,
+                    horizontal_series::label(""),
+                ),
+                (
+                    start_date.add(Duration::days(3)).timestamp() as f32,
+                    2.0,
+                    horizontal_series::label(""),
+                ),
+                (
+                    start_date.add(Duration::days(4)).timestamp() as f32,
+                    5.0,
+                    horizontal_series::label("Label"),
+                ),
             ]),
-            data_set_labels: Rc::new(vec![(
-                start_date.add(Duration::days(4)).timestamp() as f32,
-                5.0,
-                horizontal_series::label("Label"),
-            )]),
             time: start_date..end_date,
         }
     }
