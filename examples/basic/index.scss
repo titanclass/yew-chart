@@ -30,10 +30,6 @@
     }
   }
 
-  circle {
-    fill: green;
-  }
-
   .horizontal-series.some-series {
     stroke: green;
     stroke-width: 2px;
@@ -42,5 +38,9 @@
       stroke: none;
       stroke-width: 1px;
     }
+  }
+
+  .horizontal-series.bar-chart {
+    stroke-width: 30px;
   }
 }

@@ -68,7 +68,7 @@ Using the same Yew view method code as above, `series_type` within the `Horizont
 <HorizontalSeries series_type={horizontal_series::SeriesType::Bar} ... />
 ```
 
-<p align="center"><img src="./images/bar-chart.png" alt="A bar chart" width="70%" /></p>
+<p align="center"><img src="./images/bar-chart-30px.png" alt="A bar chart" width="70%" /></p>
 
 ### Scatter Plot
 

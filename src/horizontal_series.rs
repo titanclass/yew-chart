@@ -111,7 +111,7 @@ impl HorizontalSeries {
             for (data_x, data_y) in props.data.iter() {
                 let step = (data_x / data_step) * data_step;
                 if step - last_data_step > data_step {
-                    draw_chart(&element_points, &props, &mut svg_elements, &classes);
+                    draw_chart(&element_points, props, &mut svg_elements, &classes);
                     element_points.clear();
                 }
                 let x = cmp::min(
@@ -129,7 +129,7 @@ impl HorizontalSeries {
 
                 last_data_step = step;
             }
-            draw_chart(&element_points, &props, &mut svg_elements, &classes);
+            draw_chart(&element_points, props, &mut svg_elements, &classes);
         }
 
         if let Some(data_labels) = props.data_labels.as_ref() {
@@ -153,7 +153,7 @@ impl HorizontalSeries {
 }
 
 fn draw_chart(
-    element_points: &Vec<(u32, u32)>,
+    element_points: &[(u32, u32)],
     props: &Props,
     svg_elements: &mut Vec<VNode>,
     classes: &Classes,
@@ -175,7 +175,8 @@ fn draw_chart(
                 let y2 = props.height + props.y;
                 if y1 != y2 {
                     svg_elements.push(
-                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>)
+                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()}
+                            class={classes!(classes.to_owned(), "bar-chart")}/>)
                     );
                 }
             }
