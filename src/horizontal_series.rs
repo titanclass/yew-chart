@@ -11,7 +11,7 @@ use std::{cmp, ops::Range, rc::Rc};
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::VNode};
 
 pub type SeriesData = Vec<(f32, f32)>;
 pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
@@ -111,26 +111,7 @@ impl HorizontalSeries {
             for (data_x, data_y) in props.data.iter() {
                 let step = (data_x / data_step) * data_step;
                 if step - last_data_step > data_step {
-                    if props.series_type == SeriesType::Line {
-                        let points = element_points
-                            .iter()
-                            .map(|(x, y)| format!("{},{} ", x, y))
-                            .collect::<String>();
-                        svg_elements.push(
-                            html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
-                        );
-                    } else {
-                        for point in element_points.iter() {
-                            let x1 = point.0;
-                            let y1 = point.1;
-                            let x2 = x1;
-                            let y2 = props.height + props.y;
-                            if y1 != y2 {
-                                svg_elements.push(
-                                html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
-                            }
-                        }
-                    }
+                    draw_chart(&element_points, props, &mut svg_elements, &classes);
                     element_points.clear();
                 }
                 let x = cmp::min(
@@ -148,26 +129,7 @@ impl HorizontalSeries {
 
                 last_data_step = step;
             }
-            if props.series_type == SeriesType::Line {
-                let points = element_points
-                    .iter()
-                    .map(|(x, y)| format!("{},{} ", x, y))
-                    .collect::<String>();
-                svg_elements.push(
-                    html!(<polyline points={points} class={classes.to_owned()} fill="none"/>),
-                );
-            } else {
-                for point in element_points.iter() {
-                    let x1 = point.0;
-                    let y1 = point.1;
-                    let x2 = x1;
-                    let y2 = props.height + props.y;
-                    if y1 != y2 {
-                        svg_elements.push(
-                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()}/>));
-                    }
-                }
-            }
+            draw_chart(&element_points, props, &mut svg_elements, &classes);
         }
 
         if let Some(data_labels) = props.data_labels.as_ref() {
@@ -187,6 +149,38 @@ impl HorizontalSeries {
         }
 
         DerivedProps { svg_elements }
+    }
+}
+
+fn draw_chart(
+    element_points: &[(u32, u32)],
+    props: &Props,
+    svg_elements: &mut Vec<VNode>,
+    classes: &Classes,
+) {
+    match props.series_type {
+        SeriesType::Line => {
+            let points = element_points
+                .iter()
+                .map(|(x, y)| format!("{},{} ", x, y))
+                .collect::<String>();
+            svg_elements
+                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
+        }
+        SeriesType::Bar => {
+            for point in element_points.iter() {
+                let x1 = point.0;
+                let y1 = point.1;
+                let x2 = x1;
+                let y2 = props.height + props.y;
+                if y1 != y2 {
+                    svg_elements.push(
+                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()}
+                            class={classes!(classes.to_owned(), "bar-chart")}/>)
+                    );
+                }
+            }
+        }
     }
 }
 
