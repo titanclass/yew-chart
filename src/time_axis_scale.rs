@@ -5,7 +5,7 @@ use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 /// Time is rendered in the browser's local time.
 use std::{ops::Range, rc::Rc};
 
-use crate::axis::{AxisTick, NormalisedValue, AxisScale};
+use crate::axis::{AxisScale, AxisTick, NormalisedValue};
 
 const DEFAULT_LABEL_FORMAT: &str = "%d-%b";
 

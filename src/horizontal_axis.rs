@@ -10,14 +10,14 @@
 /// *   line - the axis line
 /// *   tick - the axis tick line
 /// *   text - the axis text
-use std::{rc::Rc};
+use std::rc::Rc;
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
 use yew::prelude::*;
 
-use crate::axis::{AxisTick, AxisScale, NormalisedValue};
+use crate::axis::{AxisScale, AxisTick, NormalisedValue};
 
 pub enum Msg {
     Resize,
@@ -43,14 +43,14 @@ pub struct Props {
 
 impl PartialEq for Props {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name &&
-        self.orientation == other.orientation &&
-        self.x1 == other.x1 &&
-        self.x2 == other.x2 &&
-        self.y1 == other.y1 &&
-        self.tick_len == other.tick_len &&
-        self.title == other.title &&
-        Rc::ptr_eq(&self.scale, &other.scale)
+        self.name == other.name
+            && self.orientation == other.orientation
+            && self.x1 == other.x1
+            && self.x2 == other.x2
+            && self.y1 == other.y1
+            && self.tick_len == other.tick_len
+            && self.title == other.title
+            && Rc::ptr_eq(&self.scale, &other.scale)
     }
 }
 

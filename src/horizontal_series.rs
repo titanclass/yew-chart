@@ -137,7 +137,8 @@ impl HorizontalSeries {
                     (props.horizontal_scale.normalise(*data_x).0 * x_scale) as u32,
                     props.width,
                 ) + props.x;
-                let y = props.height - ((props.vertical_scale.normalise(*data_y).0 * y_scale) as u32) as u32
+                let y = props.height
+                    - ((props.vertical_scale.normalise(*data_y).0 * y_scale) as u32) as u32
                     + props.y;
                 svg_elements.push(html! {
                     <g class={classes.to_owned()}>

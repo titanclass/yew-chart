@@ -2,27 +2,20 @@
 /// A step is also expressed and indicates the interval to be used for each tick on the axis.
 use std::{ops::Range, rc::Rc};
 
-use crate::axis::{AxisTick, NormalisedValue, AxisScale};
+use crate::axis::{AxisScale, AxisTick, NormalisedValue};
 
 #[derive(Clone)]
 pub struct LinearAxisScale {
     range: Range<f32>,
     step: f32,
-    scale: f32
+    scale: f32,
 }
 
 impl LinearAxisScale {
-    pub fn for_range(
-        range: Range<f32>,
-        step: f32,
-    ) -> LinearAxisScale {
+    pub fn for_range(range: Range<f32>, step: f32) -> LinearAxisScale {
         let scale = 1 as f32 / (range.end - range.start);
 
-        LinearAxisScale {
-            range,
-            step,
-            scale
-        }
+        LinearAxisScale { range, step, scale }
     }
 }
 
