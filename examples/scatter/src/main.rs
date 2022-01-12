@@ -1,15 +1,17 @@
 use std::{
-    ops::Add,
-    ops::{Range, Sub},
+    ops::{Add, Sub},
     rc::Rc,
 };
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use yew::prelude::*;
 use yew_chart::{
     horizontal_series::{self, HorizontalSeries, SeriesData, SeriesDataLabelled},
-    horizontal_time_axis::HorizontalTimeAxis,
+    horizontal_axis::{self, HorizontalAxis},
+    time_axis_scale::TimeAxisScale,
+    linear_axis_scale::LinearAxisScale,
     vertical_axis::{self, VerticalAxis},
+    axis::AxisScale,
 };
 
 const WIDTH: u32 = 533;
@@ -20,7 +22,8 @@ const TICK_LENGTH: u32 = 10;
 struct App {
     data_set: Rc<SeriesData>,
     data_set_labels: Rc<SeriesDataLabelled>,
-    time: Range<DateTime<Utc>>,
+    vertical_axis_scale: Rc<dyn AxisScale>,
+    horizontal_axis_scale: Rc<dyn AxisScale>,
 }
 
 impl Component for App {
@@ -31,7 +34,7 @@ impl Component for App {
     fn create(_ctx: &Context<Self>) -> Self {
         let end_date = Utc::now();
         let start_date = end_date.sub(Duration::days(4));
-
+        let time = start_date..end_date;
         App {
             data_set: Rc::new(vec![]),
             data_set_labels: Rc::new(vec![
@@ -61,7 +64,8 @@ impl Component for App {
                     horizontal_series::label("Label"),
                 ),
             ]),
-            time: start_date..end_date,
+            horizontal_axis_scale: Rc::new(TimeAxisScale::for_range(time, Duration::days(1), None)),
+            vertical_axis_scale: Rc::new(LinearAxisScale::for_range(0.0..5.0, 0.5))
         }
     }
 
@@ -77,21 +81,23 @@ impl Component for App {
                     name="some-series"
                     data={Rc::clone(&self.data_set)}
                     data_labels={Some(Rc::clone(&self.data_set_labels))}
-                    horizontal_scale={self.time.start.timestamp() as f32..self.time.end.timestamp() as f32}
-                    horizontal_scale_step={Duration::days(1).num_seconds() as f32}
-                    vertical_scale={0.0..5.0}
+                    horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
+                    horizontal_scale_step={Duration::days(2).num_seconds() as f32}
+                    vertical_scale={Rc::clone(&self.vertical_axis_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
 
                 <VerticalAxis
                     name="some-y-axis"
                     orientation={vertical_axis::Orientation::Left}
-                    scale={0.0..5.0} scale_step={0.5}
+                    scale={Rc::clone(&self.vertical_axis_scale)}
                     x1={MARGIN} y1={MARGIN} y2={HEIGHT - MARGIN}
                     tick_len={TICK_LENGTH}
                     title={"Some Y thing".to_string()} />
-
-                <HorizontalTimeAxis
-                    time={self.time.to_owned()} time_step={Duration::days(1)}
+                    
+                <HorizontalAxis
+                    name="some-x-axis"
+                    orientation={horizontal_axis::Orientation::Bottom}
+                    scale={Rc::clone(&self.horizontal_axis_scale)}
                     x1={MARGIN} y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
                     tick_len={TICK_LENGTH} />
 

@@ -10,12 +10,14 @@
 /// *   line - the axis line
 /// *   tick - the axis tick line
 /// *   text - the axis text
-use std::ops::Range;
+use std::rc::Rc;
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
 use yew::prelude::*;
+
+use crate::axis::{AxisTick, NormalisedValue, AxisScale};
 
 pub enum Msg {
     Resize,
@@ -27,17 +29,29 @@ pub enum Orientation {
     Right,
 }
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Properties, Clone)]
 pub struct Props {
     pub name: String,
     pub orientation: Orientation,
-    pub scale: Range<f32>,
-    pub scale_step: f32,
     pub x1: u32,
     pub y1: u32,
     pub y2: u32,
     pub tick_len: u32,
     pub title: Option<String>,
+    pub scale: Rc<dyn AxisScale>,
+}
+
+impl PartialEq for Props {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name &&
+        self.orientation == other.orientation &&
+        self.x1 == other.x1 &&
+        self.y1 == other.y1 &&
+        self.y2 == other.y2 &&
+        self.tick_len == other.tick_len &&
+        self.title == other.title &&
+        Rc::ptr_eq(&self.scale, &other.scale)
+    }
 }
 
 pub struct VerticalAxis {
@@ -70,33 +84,23 @@ impl Component for VerticalAxis {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let p = ctx.props();
 
-        let range_from = &p.scale.start;
-        let range_to = &p.scale.end;
-        let range_step = &p.scale_step;
-
-        let range = range_to - range_from;
-        let scale = (p.y2 - p.y1) as f32 / range;
-
-        let range_from = (range_from * 100.0) as u32;
-        let range_to = (range_to * 100.0) as u32;
-        let range_step = (range_step * 100.0) as u32;
+        let scale = (p.y2 - p.y1) as f32;
+        let x = p.x1;
+        let to_x = if p.orientation == Orientation::Left {
+            x - p.tick_len
+        } else {
+            x + p.tick_len
+        };
 
         html! {
             <svg ref={self.svg.clone()} class={classes!("axis-y", p.name.to_owned())}>
                 <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x1.to_string()} y2={p.y2.to_string()} class="line" />
-                { for (range_from..=range_to).step_by(range_step as usize).map(|i| {
-                    let i = i as f32 / 100.0;
-                    let x = p.x1;
-                    let to_x = if p.orientation == Orientation::Left {
-                        x - p.tick_len
-                    } else {
-                        x + p.tick_len
-                    };
-                    let y = (p.y1 as f32 + ((range - i) as f32 + p.scale.start) * scale) as u32;
+                { for (p.scale.ticks().iter()).map(|AxisTick { location: NormalisedValue(normalised_location), label }| {
+                    let y = (p.y2 as f32 - (normalised_location * scale)) as u32;
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={to_x.to_string()} y2={y.to_string()} class="tick" />
-                        <text x={to_x.to_string()} y={y.to_string()} text-anchor={if p.orientation == Orientation::Left {"end"} else {"start"}} class="text">{i}</text>
+                        <text x={to_x.to_string()} y={y.to_string()} text-anchor={if p.orientation == Orientation::Left {"end"} else {"start"}} class="text">{label.to_owned()}</text>
                     </>
                     }
                 }) }
