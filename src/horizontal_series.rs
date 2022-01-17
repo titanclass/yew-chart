@@ -69,13 +69,19 @@ impl PartialEq for Props {
                 (Some(labels), Some(other_labels)) => Rc::ptr_eq(labels, other_labels),
                 _ => false,
             }
-            && Rc::ptr_eq(&self.horizontal_scale, &other.horizontal_scale)
             && self.horizontal_scale_step == other.horizontal_scale_step
-            && Rc::ptr_eq(&self.vertical_scale, &other.vertical_scale)
             && self.x == other.x
             && self.y == other.y
             && self.height == other.height
             && self.width == other.width
+            && std::ptr::eq(
+                &*self.horizontal_scale as *const dyn AxisScale as *const u8,
+                &*other.horizontal_scale as *const dyn AxisScale as *const u8,
+            )
+            && std::ptr::eq(
+                &*self.vertical_scale as *const dyn AxisScale as *const u8,
+                &*other.vertical_scale as *const dyn AxisScale as *const u8,
+            )
     }
 }
 

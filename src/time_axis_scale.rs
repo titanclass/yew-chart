@@ -3,7 +3,7 @@ use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 /// A step in seconds is also expressed and indicates the interval to be used for each tick on the axis.
 ///
 /// Time is rendered in the browser's local time.
-use std::{ops::Range, rc::Rc};
+use std::ops::Range;
 
 use crate::axis::{AxisScale, AxisTick, NormalisedValue};
 
@@ -27,38 +27,36 @@ impl TimeAxisScale {
         let time_from = range.start.timestamp();
         let time_to = range.end.timestamp();
         let step = time_step.num_seconds();
-        let scale = 1 as f32 / (time_to - time_from) as f32;
+        let scale = 1.0 / (time_to - time_from) as f32;
 
         TimeAxisScale {
             time_from,
             time_to,
             step,
             scale,
-            label_format: label_format.unwrap_or(DEFAULT_LABEL_FORMAT.to_string()),
+            label_format: label_format.unwrap_or_else(|| DEFAULT_LABEL_FORMAT.to_string()),
         }
     }
 }
 
 impl AxisScale for TimeAxisScale {
-    fn ticks(&self) -> Rc<Vec<AxisTick>> {
+    fn ticks(&self) -> Vec<AxisTick> {
         let scale = self.clone();
-        Rc::new(
-            ((self.time_from)..self.time_to + 1)
-                .into_iter()
-                .step_by(scale.step as usize)
-                .map(move |i| {
-                    let location = (i - scale.time_from) as f32 * scale.scale;
-                    let utc_date_time = NaiveDateTime::from_timestamp(i, 0);
-                    let local_date_time: DateTime<Local> =
-                        DateTime::<Utc>::from_utc(utc_date_time, Utc).into();
-                    let date_str = local_date_time.format(&self.label_format);
-                    AxisTick {
-                        location: NormalisedValue(location),
-                        label: date_str.to_string(),
-                    }
-                })
-                .collect(),
-        )
+        ((self.time_from)..self.time_to + 1)
+            .into_iter()
+            .step_by(scale.step as usize)
+            .map(move |i| {
+                let location = (i - scale.time_from) as f32 * scale.scale;
+                let utc_date_time = NaiveDateTime::from_timestamp(i, 0);
+                let local_date_time: DateTime<Local> =
+                    DateTime::<Utc>::from_utc(utc_date_time, Utc).into();
+                let date_str = local_date_time.format(&self.label_format);
+                AxisTick {
+                    location: NormalisedValue(location),
+                    label: date_str.to_string(),
+                }
+            })
+            .collect()
     }
 
     fn normalise(&self, value: f32) -> NormalisedValue {

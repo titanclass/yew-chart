@@ -50,7 +50,10 @@ impl PartialEq for Props {
             && self.y2 == other.y2
             && self.tick_len == other.tick_len
             && self.title == other.title
-            && Rc::ptr_eq(&self.scale, &other.scale)
+            && std::ptr::eq(
+                &*self.scale as *const dyn AxisScale as *const u8,
+                &*other.scale as *const dyn AxisScale as *const u8,
+            )
     }
 }
 

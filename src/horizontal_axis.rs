@@ -50,7 +50,10 @@ impl PartialEq for Props {
             && self.y1 == other.y1
             && self.tick_len == other.tick_len
             && self.title == other.title
-            && Rc::ptr_eq(&self.scale, &other.scale)
+            && std::ptr::eq(
+                &*self.scale as *const dyn AxisScale as *const u8,
+                &*other.scale as *const dyn AxisScale as *const u8,
+            )
     }
 }
 
@@ -100,7 +103,7 @@ impl Component for HorizontalAxis {
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
-                        <text x={(x + 1 as f32).to_string()} y={to_y.to_string()} text-anchor="start" transform-origin={format!("{} {}", x, to_y + 1)} class="text">{label.to_string()}</text>
+                        <text x={(x + 1.0).to_string()} y={to_y.to_string()} text-anchor="start" transform-origin={format!("{} {}", x, to_y + 1)} class="text">{label.to_string()}</text>
                     </>
                     }
                 }) }
