@@ -6,12 +6,14 @@
 /// label for that point.
 ///
 /// A name is associated with the series to facilitate styling.
-use std::{cmp, ops::Range, rc::Rc};
+use std::{cmp, rc::Rc};
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
 use yew::{prelude::*, virtual_dom::VNode};
+
+use crate::axis::AxisScale;
 
 pub type SeriesData = Vec<(f32, f32)>;
 pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
@@ -48,11 +50,11 @@ pub struct Props {
     pub data: Rc<SeriesData>,
     pub data_labels: Option<Rc<SeriesDataLabelled>>,
     pub height: u32,
-    pub horizontal_scale: Range<f32>,
+    pub horizontal_scale: Rc<dyn AxisScale>,
     pub horizontal_scale_step: f32,
     pub name: String,
     pub series_type: SeriesType,
-    pub vertical_scale: Range<f32>,
+    pub vertical_scale: Rc<dyn AxisScale>,
     pub width: u32,
     pub x: u32,
     pub y: u32,
@@ -67,13 +69,21 @@ impl PartialEq for Props {
                 (Some(labels), Some(other_labels)) => Rc::ptr_eq(labels, other_labels),
                 _ => false,
             }
-            && self.horizontal_scale == other.horizontal_scale
             && self.horizontal_scale_step == other.horizontal_scale_step
-            && self.vertical_scale == other.vertical_scale
             && self.x == other.x
             && self.y == other.y
             && self.height == other.height
             && self.width == other.width
+            // test reference equality, avoiding issues with vtables discussed in
+            // https://github.com/rust-lang/rust/issues/46139
+            && std::ptr::eq(
+                &*self.horizontal_scale as *const _ as *const u8,
+                &*other.horizontal_scale as *const _ as *const u8,
+            )
+            && std::ptr::eq(
+                &*self.vertical_scale as *const _ as *const u8,
+                &*other.vertical_scale as *const _ as *const u8,
+            )
     }
 }
 
@@ -91,11 +101,8 @@ impl HorizontalSeries {
     fn derive_props(props: &Props) -> DerivedProps {
         let classes = classes!("horizontal-series", props.name.to_owned());
 
-        let x_range = props.horizontal_scale.end - props.horizontal_scale.start;
-        let x_scale = props.width as f32 / x_range;
-
-        let y_range = props.vertical_scale.end - props.vertical_scale.start;
-        let y_scale = props.height as f32 / y_range;
+        let x_scale = props.width as f32;
+        let y_scale = props.height as f32;
 
         let mut svg_elements = Vec::<Html>::with_capacity(
             props.data.len() + props.data_labels.as_ref().map(|d| d.len()).unwrap_or(0),
@@ -115,12 +122,12 @@ impl HorizontalSeries {
                     element_points.clear();
                 }
                 let x = cmp::min(
-                    ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
+                    (props.horizontal_scale.normalise(*data_x).0 * x_scale) as u32,
                     props.width,
                 ) + props.x;
                 let y = (props.height
                     - cmp::min(
-                        ((*data_y - props.vertical_scale.start) * y_scale) as u32,
+                        (props.vertical_scale.normalise(*data_y).0 * y_scale) as u32,
                         props.height,
                     ))
                     + props.y;
@@ -135,10 +142,11 @@ impl HorizontalSeries {
         if let Some(data_labels) = props.data_labels.as_ref() {
             for (data_x, data_y, label) in data_labels.iter() {
                 let x = cmp::min(
-                    ((*data_x - props.horizontal_scale.start) * x_scale) as u32,
+                    (props.horizontal_scale.normalise(*data_x).0 * x_scale) as u32,
                     props.width,
                 ) + props.x;
-                let y = props.height - ((*data_y - props.vertical_scale.start) * y_scale) as u32
+                let y = props.height
+                    - ((props.vertical_scale.normalise(*data_y).0 * y_scale) as u32) as u32
                     + props.y;
                 svg_elements.push(html! {
                     <g class={classes.to_owned()}>
@@ -203,7 +211,9 @@ impl Component for HorizontalSeries {
         }
     }
 
-    fn changed(&mut self, _ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+        self.derived_props = Self::derive_props(ctx.props());
+        log::info!("Updated plot");
         true
     }
 

@@ -1,6 +1,9 @@
 // Typical settings for all charts
 
-.time-axis-x {
+.some-x-axis {
+  .text {
+      transform: rotate(45deg);
+  }
   .line {
     stroke: grey;
   }
