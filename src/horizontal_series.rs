@@ -74,13 +74,15 @@ impl PartialEq for Props {
             && self.y == other.y
             && self.height == other.height
             && self.width == other.width
+            // test reference equality, avoiding issues with vtables discussed in
+            // https://github.com/rust-lang/rust/issues/46139
             && std::ptr::eq(
-                &*self.horizontal_scale as *const dyn AxisScale as *const u8,
-                &*other.horizontal_scale as *const dyn AxisScale as *const u8,
+                &*self.horizontal_scale as *const _ as *const u8,
+                &*other.horizontal_scale as *const _ as *const u8,
             )
             && std::ptr::eq(
-                &*self.vertical_scale as *const dyn AxisScale as *const u8,
-                &*other.vertical_scale as *const dyn AxisScale as *const u8,
+                &*self.vertical_scale as *const _ as *const u8,
+                &*other.vertical_scale as *const _ as *const u8,
             )
     }
 }
