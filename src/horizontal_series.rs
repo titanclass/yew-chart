@@ -172,8 +172,8 @@ fn draw_chart(
                 .iter()
                 .map(|(x, y)| format!("{},{} ", x, y))
                 .collect::<String>();
-            svg_elements
-                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
+            svg_elements.push(html!(<polyline points={points} fill="none"
+                class={classes!(classes.to_owned(), "line-chart")}/>));
         }
         SeriesType::Bar => {
             for point in element_points.iter() {
