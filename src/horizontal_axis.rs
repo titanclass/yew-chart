@@ -60,7 +60,7 @@ impl PartialEq for Props {
 }
 
 pub struct HorizontalAxis {
-    _resize_listener: Option<EventListener>,
+    _resize_listener: EventListener,
     svg: NodeRef,
 }
 
@@ -69,9 +69,12 @@ impl Component for HorizontalAxis {
 
     type Properties = Props;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
         HorizontalAxis {
-            _resize_listener: None,
+            _resize_listener: EventListener::new(&gloo_utils::window(), "resize", move |e| {
+                on_resize.emit(e.clone())
+            }),
             svg: NodeRef::default(),
         }
     }
@@ -144,10 +147,6 @@ impl Component for HorizontalAxis {
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
-            let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
-            self._resize_listener = Some(EventListener::new(&svg_element, "resize", move |e| {
-                on_resize.emit(e.clone())
-            }));
         }
     }
 }
