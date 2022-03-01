@@ -139,8 +139,7 @@ impl Component for HorizontalAxis {
         let element = self.svg.cast::<Element>().unwrap();
         if let Some(svg_element) = element
             .first_child()
-            .map(|n| n.dyn_into::<SvgElement>().ok())
-            .flatten()
+            .and_then(|n| n.dyn_into::<SvgElement>().ok())
         {
             let width = svg_element.get_bounding_client_rect().width() as f32;
             let scale = (p.x2 - p.x1) as f32 / width;
