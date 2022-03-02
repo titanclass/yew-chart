@@ -30,12 +30,32 @@ jobs:
         override: true
         components: rustfmt, clippy
 
-    - name: Lint
+    - name: Lint basic
+      env:
+        RUSTFLAGS: -Dwarnings
+      working-directory: ./examples/basic
+      run: cargo clippy
+
+    - name: Format basic
+      working-directory: ./examples/basic
+      run: cargo fmt -- --check
+
+    - name: Lint scatter
+      env:
+        RUSTFLAGS: -Dwarnings
+      working-directory: ./examples/scatter
+      run: cargo clippy
+
+    - name: Format scatter
+      working-directory: ./examples/scatter
+      run: cargo fmt -- --check
+
+    - name: Lint lib
       env:
         RUSTFLAGS: -Dwarnings
       run: cargo clippy
 
-    - name: Format
+    - name: Format lib
       run: cargo fmt -- --check
 
     - name: Test
