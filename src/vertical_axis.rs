@@ -33,10 +33,10 @@ pub enum Orientation {
 pub struct Props {
     pub name: String,
     pub orientation: Orientation,
-    pub x1: u32,
-    pub y1: u32,
-    pub y2: u32,
-    pub tick_len: u32,
+    pub x1: f32,
+    pub y1: f32,
+    pub y2: f32,
+    pub tick_len: f32,
     pub title: Option<String>,
     pub scale: Rc<dyn AxisScale>,
 }
@@ -113,13 +113,13 @@ impl Component for VerticalAxis {
                     }
                 }) }
                 { for p.title.as_ref().map(|t| {
-                    let title_distance = p.tick_len << 1;
+                    let title_distance = p.tick_len * 2.0;
                     let (x, rotation) = if p.orientation == Orientation::Left {
                         (p.x1 - title_distance, 270)
                     } else {
                         (p.x1 + title_distance, 90)
                     };
-                    let y = p.y1 + ((p.y2 - p.y1) >> 1);
+                    let y = p.y1 + ((p.y2 - p.y1) * 0.5);
                     html! {
                         <text
                             x={x.to_string()} y={y.to_string()}
@@ -143,8 +143,8 @@ impl Component for VerticalAxis {
             .and_then(|n| n.dyn_into::<SvgElement>().ok())
         {
             let height = svg_element.get_bounding_client_rect().height() as f32;
-            let scale = (p.y2 - p.y1) as f32 / height;
-            let font_size = scale * 100f32;
+            let scale = (p.y2 - p.y1) / height;
+            let font_size = scale * 100.0;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
         }
