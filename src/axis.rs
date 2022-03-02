@@ -1,5 +1,6 @@
 /// Axis scaled value, expected to be between 0 and 1
 /// except in the case where the value is outside of the axis range
+#[derive(Debug, PartialEq)]
 pub struct NormalisedValue(pub f32);
 
 /// Specifies a generic scale on which axes and data can be rendered
@@ -20,11 +21,12 @@ pub trait AxisScale {
 
 /// An axis tick, specifying a label to be displayed at some normalised
 /// position along the axis
+#[derive(Debug, PartialEq)]
 pub struct AxisTick {
     /// normalised location between zero and one along the axis specifying
     /// the position at which the tick should be rendered
     pub location: NormalisedValue,
 
-    /// text label that should be rendered alongside the tick
+    /// The label that should be rendered alongside the tick
     pub label: String,
 }

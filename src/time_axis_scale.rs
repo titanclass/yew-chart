@@ -1,13 +1,21 @@
-use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 /// A TimeAxisScale represents a linear scale for timestamps within a fixed range.
-/// A step in seconds is also expressed and indicates the interval to be used for each tick on the axis.
-///
-/// Time is rendered in the browser's local time.
-use std::ops::Range;
+/// A step duration is also expressed and indicates the interval to be used for each tick on the axis.
+use chrono::TimeZone;
+use chrono::{DateTime, Duration, Local, Utc};
+use std::{ops::Range, rc::Rc};
 
 use crate::axis::{AxisScale, AxisTick, NormalisedValue};
 
-const DEFAULT_LABEL_FORMAT: &str = "%d-%b";
+/// An axis labeller is a closure that produces a string given a value within the axis scale
+pub type Labeller = dyn Fn(i64) -> String;
+
+fn labeller() -> Box<Labeller> {
+    Box::new(move |ts| {
+        let utc_date_time = Utc.timestamp(ts, 0);
+        let local_date_time: DateTime<Local> = utc_date_time.into();
+        local_date_time.format("%d-%b").to_string()
+    })
+}
 
 #[derive(Clone)]
 pub struct TimeAxisScale {
@@ -15,18 +23,24 @@ pub struct TimeAxisScale {
     time_to: i64,
     step: i64,
     scale: f32,
-    label_format: String,
+    labeller: Rc<Labeller>,
 }
 
 impl TimeAxisScale {
-    pub fn for_range(
+    /// Create a new scale with a range and step representing labels as a day and month in local time.
+    pub fn new(range: Range<DateTime<Utc>>, step: Duration) -> TimeAxisScale {
+        Self::with_labeller(range, step, Rc::new(labeller()))
+    }
+
+    /// Create a new scale with a range and step and custom labeller.
+    pub fn with_labeller(
         range: Range<DateTime<Utc>>,
-        time_step: Duration,
-        label_format: Option<String>,
+        step: Duration,
+        labeller: Rc<Box<Labeller>>,
     ) -> TimeAxisScale {
         let time_from = range.start.timestamp();
         let time_to = range.end.timestamp();
-        let step = time_step.num_seconds();
+        let step = step.num_seconds();
         let scale = 1.0 / (time_to - time_from) as f32;
 
         TimeAxisScale {
@@ -34,7 +48,7 @@ impl TimeAxisScale {
             time_to,
             step,
             scale,
-            label_format: label_format.unwrap_or_else(|| DEFAULT_LABEL_FORMAT.to_string()),
+            labeller,
         }
     }
 }
@@ -47,13 +61,9 @@ impl AxisScale for TimeAxisScale {
             .step_by(scale.step as usize)
             .map(move |i| {
                 let location = (i - scale.time_from) as f32 * scale.scale;
-                let utc_date_time = NaiveDateTime::from_timestamp(i, 0);
-                let local_date_time: DateTime<Local> =
-                    DateTime::<Utc>::from_utc(utc_date_time, Utc).into();
-                let date_str = local_date_time.format(&self.label_format);
                 AxisTick {
                     location: NormalisedValue(location),
-                    label: date_str.to_string(),
+                    label: (self.labeller)(i),
                 }
             })
             .collect()
@@ -61,5 +71,51 @@ impl AxisScale for TimeAxisScale {
 
     fn normalise(&self, value: f32) -> NormalisedValue {
         NormalisedValue((value - (self.time_from as f32)) * self.scale)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::ops::Sub;
+
+    #[test]
+    fn test_scale() {
+        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let start_date = end_date.sub(Duration::days(4));
+        let range = start_date.into()..end_date.into();
+        let scale = TimeAxisScale::new(range, Duration::days(1));
+
+        assert_eq!(
+            scale.ticks(),
+            vec![
+                AxisTick {
+                    location: NormalisedValue(0.0),
+                    label: "26-Feb".to_string()
+                },
+                AxisTick {
+                    location: NormalisedValue(0.25),
+                    label: "27-Feb".to_string()
+                },
+                AxisTick {
+                    location: NormalisedValue(0.5),
+                    label: "28-Feb".to_string()
+                },
+                AxisTick {
+                    location: NormalisedValue(0.75),
+                    label: "01-Mar".to_string()
+                },
+                AxisTick {
+                    location: NormalisedValue(1.0),
+                    label: "02-Mar".to_string()
+                }
+            ]
+        );
+
+        assert_eq!(
+            scale.normalise(end_date.sub(Duration::days(2)).timestamp() as f32),
+            NormalisedValue(0.5)
+        );
     }
 }

@@ -37,21 +37,23 @@ fn view(&self, _ctx: &Context<Self>) -> yew::Html {
                 name="some-series"
                 data={Rc::clone(&self.data_set)}
                 data_labels={Some(Rc::clone(&self.data_set_labels))}
-                horizontal_scale={self.time.start.timestamp() as f32..self.time.end.timestamp() as f32}
-                horizontal_scale_step={Duration::days(1).num_seconds() as f32}
-                vertical_scale={0.0..5.0}
+                horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
+                horizontal_scale_step={Duration::days(2).num_seconds() as f32}
+                vertical_scale={Rc::clone(&self.vertical_axis_scale)}
                 x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
 
             <VerticalAxis
                 name="some-y-axis"
                 orientation={vertical_axis::Orientation::Left}
-                scale={0.0..5.0} scale_step={0.5}
+                scale={Rc::clone(&self.vertical_axis_scale)}
                 x1={MARGIN} y1={MARGIN} y2={HEIGHT - MARGIN}
                 tick_len={TICK_LENGTH}
                 title={"Some Y thing".to_string()} />
 
-            <HorizontalTimeAxis
-                time={self.time.to_owned()} time_step={Duration::days(1)}
+            <HorizontalAxis
+                name="some-x-axis"
+                orientation={horizontal_axis::Orientation::Bottom}
+                scale={Rc::clone(&self.horizontal_axis_scale)}
                 x1={MARGIN} y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
                 tick_len={TICK_LENGTH} />
 

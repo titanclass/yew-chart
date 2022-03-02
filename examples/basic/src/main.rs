@@ -6,12 +6,12 @@ use std::{
 use chrono::{Duration, Utc};
 use yew::prelude::*;
 use yew_chart::{
-    horizontal_series::{self, HorizontalSeries, SeriesData, SeriesDataLabelled},
-    horizontal_axis::{self, HorizontalAxis},
-    time_axis_scale::TimeAxisScale,
-    linear_axis_scale::LinearAxisScale,
-    vertical_axis::{self, VerticalAxis},
     axis::AxisScale,
+    horizontal_axis::{self, HorizontalAxis},
+    horizontal_series::{self, HorizontalSeries, SeriesData, SeriesDataLabelled},
+    linear_axis_scale::LinearAxisScale,
+    time_axis_scale::TimeAxisScale,
+    vertical_axis::{self, VerticalAxis},
 };
 
 const WIDTH: u32 = 533;
@@ -48,8 +48,8 @@ impl Component for App {
                 5.0,
                 horizontal_series::label("Label"),
             )]),
-            horizontal_axis_scale: Rc::new(TimeAxisScale::for_range(time, Duration::days(1), None)),
-            vertical_axis_scale: Rc::new(LinearAxisScale::for_range(0.0..5.0, 0.5))
+            horizontal_axis_scale: Rc::new(TimeAxisScale::new(time, Duration::days(1))),
+            vertical_axis_scale: Rc::new(LinearAxisScale::new(0.0..5.0, 1.0)),
         }
     }
 
@@ -77,7 +77,7 @@ impl Component for App {
                     x1={MARGIN} y1={MARGIN} y2={HEIGHT - MARGIN}
                     tick_len={TICK_LENGTH}
                     title={"Some Y thing".to_string()} />
-                    
+
                 <HorizontalAxis
                     name="some-x-axis"
                     orientation={horizontal_axis::Orientation::Bottom}
