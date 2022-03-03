@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yew_chart::{
     axis::AxisScale,
     horizontal_axis::{self, HorizontalAxis},
-    horizontal_series::{self, HorizontalSeries, SeriesData, SeriesDataLabelled},
+    horizontal_series::{self, HorizontalSeries, SeriesData},
     linear_axis_scale::LinearAxisScale,
     time_axis_scale::TimeAxisScale,
     vertical_axis::{self, VerticalAxis},
@@ -21,7 +21,6 @@ const TICK_LENGTH: f32 = 10.0;
 
 struct App {
     data_set: Rc<SeriesData>,
-    data_set_labels: Rc<SeriesDataLabelled>,
     vertical_axis_scale: Rc<dyn AxisScale>,
     horizontal_axis_scale: Rc<dyn AxisScale>,
 }
@@ -35,19 +34,33 @@ impl Component for App {
         let end_date = Utc::now();
         let start_date = end_date.sub(Duration::days(4));
         let time = start_date..end_date;
+
+        let circle_text_labeller = Rc::from(horizontal_series::circle_text_label("Label"));
+
         App {
             data_set: Rc::new(vec![
-                (start_date.timestamp() as f32, 1.0),
-                (start_date.add(Duration::days(1)).timestamp() as f32, 4.0),
-                (start_date.add(Duration::days(2)).timestamp() as f32, 3.0),
-                (start_date.add(Duration::days(3)).timestamp() as f32, 2.0),
-                (start_date.add(Duration::days(4)).timestamp() as f32, 5.0),
+                (start_date.timestamp() as f32, 1.0, None),
+                (
+                    start_date.add(Duration::days(1)).timestamp() as f32,
+                    4.0,
+                    None,
+                ),
+                (
+                    start_date.add(Duration::days(2)).timestamp() as f32,
+                    3.0,
+                    None,
+                ),
+                (
+                    start_date.add(Duration::days(3)).timestamp() as f32,
+                    2.0,
+                    None,
+                ),
+                (
+                    start_date.add(Duration::days(4)).timestamp() as f32,
+                    5.0,
+                    Some(circle_text_labeller),
+                ),
             ]),
-            data_set_labels: Rc::new(vec![(
-                start_date.add(Duration::days(4)).timestamp() as f32,
-                5.0,
-                horizontal_series::label("Label"),
-            )]),
             horizontal_axis_scale: Rc::new(TimeAxisScale::new(time, Duration::days(1))),
             vertical_axis_scale: Rc::new(LinearAxisScale::new(0.0..5.0, 1.0)),
         }
@@ -64,7 +77,6 @@ impl Component for App {
                     series_type={horizontal_series::SeriesType::Line}
                     name="some-series"
                     data={Rc::clone(&self.data_set)}
-                    data_labels={Some(Rc::clone(&self.data_set_labels))}
                     horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
                     horizontal_scale_step={Duration::days(2).num_seconds() as f32}
                     vertical_scale={Rc::clone(&self.vertical_axis_scale)}

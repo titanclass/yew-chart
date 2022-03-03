@@ -74,33 +74,7 @@ Using the same Yew view method code as above, `series_type` within the `Horizont
 
 ### Scatter Plot
 
-`examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts.
-
-Instead of using the separate `SeriesType` key to select a scatter plot, the scatter plot is created by taking advantage of the `data_labels` property within `HorizontalSeries`.
-
-Since each label by default is composed of a circle and a textbox, a dataset of labels is created within `main.rs`, where for each datapoint that <em>shouldn't</em> have a label, that label is left empty.
-
-```rust
-//A label that will only show a point
-(
-    start_date.timestamp() as f32,
-    1.0,
-    horizontal_series::label(""),
-),
-
-//A label with text "Label"
-(
-    start_date.add(Duration::days(4)).timestamp() as f32,
-    5.0,
-    horizontal_series::label("Label"),
-),
-```
-
-As such, the scatter plot is a series of labels, rather than a specific dataset.
-
-<p align="center"><img src="./images/scatter-plot.png" alt="A scatter plot" width="70%" /></p>
-
-If it is desired that a `Line` or `Bar` chart be added to the scatter plot, this may be added by providing data in `data_set`, as in the previous examples.
+`examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts. The labeller is relied upon for scatter plots.
 
 ## Contribution policy
 

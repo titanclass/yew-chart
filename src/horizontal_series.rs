@@ -15,40 +15,57 @@ use yew::{prelude::*, virtual_dom::VNode};
 
 use crate::axis::AxisScale;
 
-pub type SeriesData = Vec<(f32, f32)>;
-pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
+/// Describes a closure that takes data values (x, y) and produces Html as the label
 pub type SeriesDataLabeller = dyn Fn(f32, f32) -> Html;
+
+/// Describes a data series with each point optionally receiving a labeller
+pub type SeriesData = Vec<(f32, f32, Option<Rc<SeriesDataLabeller>>)>;
 
 const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
-// A convenience for using a string as a label along with a circle dot.
-pub fn label(text: &str) -> Box<SeriesDataLabeller> {
-    let t = text.to_string();
+// A convenience for using an optional string as a label along with a circle dot.
+fn label(text: Option<String>) -> Box<SeriesDataLabeller> {
     Box::new(move |x, y| {
         html! {
             <>
             <circle cx={x.to_string()} cy={y.to_string()} r={CIRCLE_RADIUS.to_string()} />
-            <text x={x.to_string()} y={(y - DATA_LABEL_OFFSET).to_string()}>{t.to_owned()}</text>
+            if let Some(t) = &text {
+                <text x={x.to_string()} y={(y - DATA_LABEL_OFFSET).to_string()}>{t.to_owned()}</text>
+            }
             </>
         }
     })
+}
+
+/// A a circle dot label.
+pub fn circle_label() -> Box<SeriesDataLabeller> {
+    label(None)
+}
+
+/// A a circle dot label with associated text.
+pub fn circle_text_label(text: &str) -> Box<SeriesDataLabeller> {
+    label(Some(text.to_string()))
 }
 
 pub enum Msg {
     Resize,
 }
 
+/// Describes how to process each item of series data
 #[derive(Clone, PartialEq)]
 pub enum SeriesType {
-    Line,
+    /// Plots the data points as bars
     Bar,
+    /// Plots the data points as lines
+    Line,
+    /// Does not join the data points - relies on a labeller
+    Scatter,
 }
 
 #[derive(Properties, Clone)]
 pub struct Props {
     pub data: Rc<SeriesData>,
-    pub data_labels: Option<Rc<SeriesDataLabelled>>,
     pub height: f32,
     pub horizontal_scale: Rc<dyn AxisScale>,
     pub horizontal_scale_step: f32,
@@ -65,10 +82,6 @@ impl PartialEq for Props {
         self.series_type == other.series_type
             && self.name == other.name
             && Rc::ptr_eq(&self.data, &other.data)
-            && match (&self.data_labels, &other.data_labels) {
-                (Some(labels), Some(other_labels)) => Rc::ptr_eq(labels, other_labels),
-                _ => false,
-            }
             && self.horizontal_scale_step == other.horizontal_scale_step
             && self.x == other.x
             && self.y == other.y
@@ -104,9 +117,7 @@ impl HorizontalSeries {
         let x_scale = props.width as f32;
         let y_scale = props.height as f32;
 
-        let mut svg_elements = Vec::<Html>::with_capacity(
-            props.data.len() + props.data_labels.as_ref().map(|d| d.len()).unwrap_or(0),
-        );
+        let mut svg_elements = Vec::<Html>::with_capacity(props.data.len() * 2);
 
         if props.data.len() > 0 {
             let mut element_points = Vec::<(f32, f32)>::with_capacity(props.data.len());
@@ -115,7 +126,7 @@ impl HorizontalSeries {
 
             let data_step = props.horizontal_scale_step;
             let mut last_data_step = -data_step;
-            for (data_x, data_y) in props.data.iter() {
+            for (data_x, data_y, labeller) in props.data.iter() {
                 let step = (data_x / data_step) * data_step;
                 if step - last_data_step > data_step {
                     draw_chart(&element_points, props, &mut svg_elements, &classes);
@@ -126,26 +137,21 @@ impl HorizontalSeries {
                 let y = props.height
                     - (props.vertical_scale.normalise(*data_y).0 * y_scale).min(props.height)
                     + props.y;
+
+                if let Some(l) = labeller {
+                    svg_elements.push(html! {
+                        <g class={classes.to_owned()}>
+                            {l(x, y)}
+                        </g>
+                    });
+                }
+
                 top_y = top_y.min(y);
                 element_points.push((x, y));
 
                 last_data_step = step;
             }
             draw_chart(&element_points, props, &mut svg_elements, &classes);
-        }
-
-        if let Some(data_labels) = props.data_labels.as_ref() {
-            for (data_x, data_y, label) in data_labels.iter() {
-                let x = (props.horizontal_scale.normalise(*data_x).0 * x_scale).min(props.width)
-                    + props.x;
-                let y =
-                    props.height - (props.vertical_scale.normalise(*data_y).0 * y_scale) + props.y;
-                svg_elements.push(html! {
-                    <g class={classes.to_owned()}>
-                        {label(x, y)}
-                    </g>
-                })
-            }
         }
 
         DerivedProps { svg_elements }
@@ -159,14 +165,6 @@ fn draw_chart(
     classes: &Classes,
 ) {
     match props.series_type {
-        SeriesType::Line => {
-            let points = element_points
-                .iter()
-                .map(|(x, y)| format!("{},{} ", x, y))
-                .collect::<String>();
-            svg_elements
-                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
-        }
         SeriesType::Bar => {
             for point in element_points.iter() {
                 let x1 = point.0;
@@ -181,6 +179,15 @@ fn draw_chart(
                 }
             }
         }
+        SeriesType::Line => {
+            let points = element_points
+                .iter()
+                .map(|(x, y)| format!("{},{} ", x, y))
+                .collect::<String>();
+            svg_elements
+                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
+        }
+        SeriesType::Scatter => (),
     }
 }
 
