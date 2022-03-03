@@ -14,10 +14,10 @@ use yew_chart::{
     vertical_axis::{self, VerticalAxis},
 };
 
-const WIDTH: u32 = 533;
-const HEIGHT: u32 = 300;
-const MARGIN: u32 = 50;
-const TICK_LENGTH: u32 = 10;
+const WIDTH: f32 = 533.0;
+const HEIGHT: f32 = 300.0;
+const MARGIN: f32 = 50.0;
+const TICK_LENGTH: f32 = 10.0;
 
 struct App {
     data_set: Rc<SeriesData>,
@@ -68,7 +68,7 @@ impl Component for App {
                     horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
                     horizontal_scale_step={Duration::days(2).num_seconds() as f32}
                     vertical_scale={Rc::clone(&self.vertical_axis_scale)}
-                    x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2)} height={HEIGHT - (MARGIN * 2)} />
+                    x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
                 <VerticalAxis
                     name="some-y-axis"

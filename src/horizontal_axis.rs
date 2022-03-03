@@ -33,10 +33,10 @@ pub enum Orientation {
 pub struct Props {
     pub name: String,
     pub orientation: Orientation,
-    pub x1: u32,
-    pub x2: u32,
-    pub y1: u32,
-    pub tick_len: u32,
+    pub x1: f32,
+    pub x2: f32,
+    pub y1: f32,
+    pub tick_len: f32,
     pub title: Option<String>,
     pub scale: Rc<dyn AxisScale>,
 }
@@ -108,18 +108,18 @@ impl Component for HorizontalAxis {
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
-                        <text x={(x + 1.0).to_string()} y={to_y.to_string()} text-anchor="start" transform-origin={format!("{} {}", x, to_y + 1)} class="text">{label.to_string()}</text>
+                        <text x={(x + 1.0).to_string()} y={to_y.to_string()} text-anchor="start" transform-origin={format!("{} {}", x, to_y + 1.0)} class="text">{label.to_string()}</text>
                     </>
                     }
                 }) }
                 { for p.title.as_ref().map(|t| {
-                    let title_distance = p.tick_len << 1;
+                    let title_distance = p.tick_len * 2.0;
                     let y = if p.orientation == Orientation::Top {
                         p.y1 - title_distance
                     } else {
                         p.y1 + title_distance
                     };
-                    let x = p.x1 + ((p.x2 - p.x1) >> 1);
+                    let x = p.x1 + ((p.x2 - p.x1) * 0.5);
                     html! {
                         <text
                             x={x.to_string()} y={y.to_string()}
@@ -142,8 +142,8 @@ impl Component for HorizontalAxis {
             .and_then(|n| n.dyn_into::<SvgElement>().ok())
         {
             let width = svg_element.get_bounding_client_rect().width() as f32;
-            let scale = (p.x2 - p.x1) as f32 / width;
-            let font_size = scale * 100f32;
+            let scale = (p.x2 - p.x1) / width;
+            let font_size = scale * 100.0;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));
         }

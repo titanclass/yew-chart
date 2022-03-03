@@ -6,7 +6,7 @@
 /// label for that point.
 ///
 /// A name is associated with the series to facilitate styling.
-use std::{cmp, rc::Rc};
+use std::rc::Rc;
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
@@ -17,10 +17,10 @@ use crate::axis::AxisScale;
 
 pub type SeriesData = Vec<(f32, f32)>;
 pub type SeriesDataLabelled = Vec<(f32, f32, Box<SeriesDataLabeller>)>;
-pub type SeriesDataLabeller = dyn Fn(u32, u32) -> Html;
+pub type SeriesDataLabeller = dyn Fn(f32, f32) -> Html;
 
-const DATA_LABEL_OFFSET: u32 = 3;
-const CIRCLE_RADIUS: u32 = DATA_LABEL_OFFSET >> 1;
+const DATA_LABEL_OFFSET: f32 = 3.0;
+const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
 // A convenience for using a string as a label along with a circle dot.
 pub fn label(text: &str) -> Box<SeriesDataLabeller> {
@@ -49,15 +49,15 @@ pub enum SeriesType {
 pub struct Props {
     pub data: Rc<SeriesData>,
     pub data_labels: Option<Rc<SeriesDataLabelled>>,
-    pub height: u32,
+    pub height: f32,
     pub horizontal_scale: Rc<dyn AxisScale>,
     pub horizontal_scale_step: f32,
     pub name: String,
     pub series_type: SeriesType,
     pub vertical_scale: Rc<dyn AxisScale>,
-    pub width: u32,
-    pub x: u32,
-    pub y: u32,
+    pub width: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
 impl PartialEq for Props {
@@ -109,7 +109,7 @@ impl HorizontalSeries {
         );
 
         if props.data.len() > 0 {
-            let mut element_points = Vec::<(u32, u32)>::with_capacity(props.data.len());
+            let mut element_points = Vec::<(f32, f32)>::with_capacity(props.data.len());
 
             let mut top_y = props.height;
 
@@ -121,17 +121,12 @@ impl HorizontalSeries {
                     draw_chart(&element_points, props, &mut svg_elements, &classes);
                     element_points.clear();
                 }
-                let x = cmp::min(
-                    (props.horizontal_scale.normalise(*data_x).0 * x_scale) as u32,
-                    props.width,
-                ) + props.x;
-                let y = (props.height
-                    - cmp::min(
-                        (props.vertical_scale.normalise(*data_y).0 * y_scale) as u32,
-                        props.height,
-                    ))
+                let x = (props.horizontal_scale.normalise(*data_x).0 * x_scale.min(props.width))
+                    + props.x;
+                let y = props.height
+                    - (props.vertical_scale.normalise(*data_y).0 * y_scale).min(props.height)
                     + props.y;
-                top_y = cmp::min(top_y, y);
+                top_y = top_y.min(y);
                 element_points.push((x, y));
 
                 last_data_step = step;
@@ -141,13 +136,10 @@ impl HorizontalSeries {
 
         if let Some(data_labels) = props.data_labels.as_ref() {
             for (data_x, data_y, label) in data_labels.iter() {
-                let x = cmp::min(
-                    (props.horizontal_scale.normalise(*data_x).0 * x_scale) as u32,
-                    props.width,
-                ) + props.x;
-                let y = props.height
-                    - ((props.vertical_scale.normalise(*data_y).0 * y_scale) as u32) as u32
-                    + props.y;
+                let x = (props.horizontal_scale.normalise(*data_x).0 * x_scale).min(props.width)
+                    + props.x;
+                let y =
+                    props.height - (props.vertical_scale.normalise(*data_y).0 * y_scale) + props.y;
                 svg_elements.push(html! {
                     <g class={classes.to_owned()}>
                         {label(x, y)}
@@ -161,7 +153,7 @@ impl HorizontalSeries {
 }
 
 fn draw_chart(
-    element_points: &[(u32, u32)],
+    element_points: &[(f32, f32)],
     props: &Props,
     svg_elements: &mut Vec<VNode>,
     classes: &Classes,
