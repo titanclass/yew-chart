@@ -37,6 +37,11 @@
     stroke: green;
     stroke-width: 2px;
 
+    circle {
+      fill: green;
+      stroke-width: 0px;
+    }
+
     text {
       stroke: none;
       stroke-width: 1px;
