@@ -13,7 +13,6 @@ version = "0.1.0"
 chrono = "0.4.19"
 gloo-events = "0.1.1"
 gloo-utils = "0.1.2"
-log = "0.4"
 wasm-bindgen = "0.2.64"
 yew = "0.19.3"
 

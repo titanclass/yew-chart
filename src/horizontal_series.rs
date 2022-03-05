@@ -215,7 +215,6 @@ impl Component for HorizontalSeries {
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
         self.derived_props = Self::derive_props(ctx.props());
-        log::info!("Updated plot");
         true
     }
 
