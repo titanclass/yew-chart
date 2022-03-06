@@ -100,8 +100,6 @@ fn app() -> Html {
 }
 ```
 
-Please check out the example to see the detail, including how to set up the data fed in via Props.
-
 > If passing `SeriesData` around via `Props`, you'll need to provide a `PartialEq` implementation. Rust won't be able to derive one 
 > automatically for you as `SeriesData` holds a closure that cannot be compared. This doesn't end up being a problem though as 
 > should be performing an explicit pointer comparison when comparing `Rc` based values anyway; `Rc` contained references are immutable. 
