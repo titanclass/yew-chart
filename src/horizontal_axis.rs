@@ -108,7 +108,9 @@ impl Component for HorizontalAxis {
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
-                        <text x={x.to_string()} y={to_y.to_string()} text-anchor="middle" transform-origin={format!("{} {}", x, to_y)} dominant-baseline={baseline.to_string()} class="text">{label.to_string()}</text>
+                        if let Some(l) = label {
+                            <text x={x.to_string()} y={to_y.to_string()} text-anchor="middle" transform-origin={format!("{} {}", x, to_y)} dominant-baseline={baseline.to_string()} class="text">{l.to_string()}</text>
+                        }
                     </>
                     }
                 }) }

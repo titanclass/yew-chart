@@ -108,7 +108,9 @@ impl Component for VerticalAxis {
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={to_x.to_string()} y2={y.to_string()} class="tick" />
-                        <text x={to_x.to_string()} y={y.to_string()} text-anchor={if p.orientation == Orientation::Left {"end"} else {"start"}} class="text">{label.to_owned()}</text>
+                        if let Some(l) = label {
+                            <text x={to_x.to_string()} y={y.to_string()} text-anchor={if p.orientation == Orientation::Left {"end"} else {"start"}} class="text">{l.to_string()}</text>
+                        }
                     </>
                     }
                 }) }

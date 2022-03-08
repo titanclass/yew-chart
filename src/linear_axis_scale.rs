@@ -16,20 +16,20 @@ pub struct LinearAxisScale {
     range: Range<f32>,
     step: f32,
     scale: f32,
-    labeller: Rc<Labeller>,
+    labeller: Option<Rc<Labeller>>,
 }
 
 impl LinearAxisScale {
     /// Create a new scale with a range and step and labels as a integers
     pub fn new(range: Range<f32>, step: f32) -> LinearAxisScale {
-        Self::with_labeller(range, step, Rc::new(labeller()))
+        Self::with_labeller(range, step, Some(Rc::from(labeller())))
     }
 
     /// Create a new scale with a range and step and a custom labeller
     pub fn with_labeller(
         range: Range<f32>,
         step: f32,
-        labeller: Rc<Box<Labeller>>,
+        labeller: Option<Rc<Labeller>>,
     ) -> LinearAxisScale {
         let scale = 1.0 / (range.end - range.start);
         LinearAxisScale {
@@ -53,7 +53,7 @@ impl AxisScale for LinearAxisScale {
                 let value = scale.range.start + (i as f32 * scale.step);
                 AxisTick {
                     location: NormalisedValue(location),
-                    label: (self.labeller)(value),
+                    label: self.labeller.as_ref().map(|l| (l)(value)),
                 }
             })
             .collect()
@@ -77,23 +77,23 @@ mod tests {
             vec![
                 AxisTick {
                     location: NormalisedValue(0.0),
-                    label: "0".to_string()
+                    label: Some("0".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.25),
-                    label: "25".to_string()
+                    label: Some("25".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.5),
-                    label: "50".to_string()
+                    label: Some("50".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.75),
-                    label: "75".to_string()
+                    label: Some("75".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(1.0),
-                    label: "100".to_string()
+                    label: Some("100".to_string())
                 }
             ]
         );
