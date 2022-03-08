@@ -94,10 +94,10 @@ impl Component for HorizontalAxis {
 
         let scale = (p.x2 - p.x1) as f32;
         let y = p.y1;
-        let to_y = if p.orientation == Orientation::Top {
-            y - p.tick_len
+        let (to_y, baseline) = if p.orientation == Orientation::Top {
+            (y - p.tick_len, "auto")
         } else {
-            y + p.tick_len
+            (y + p.tick_len, "hanging")
         };
 
         html! {
@@ -108,7 +108,7 @@ impl Component for HorizontalAxis {
                     html! {
                     <>
                         <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
-                        <text x={(x + 1.0).to_string()} y={to_y.to_string()} text-anchor="start" transform-origin={format!("{} {}", x, to_y + 1.0)} class="text">{label.to_string()}</text>
+                        <text x={x.to_string()} y={to_y.to_string()} text-anchor="middle" transform-origin={format!("{} {}", x, to_y)} dominant-baseline={baseline.to_string()} class="text">{label.to_string()}</text>
                     </>
                     }
                 }) }

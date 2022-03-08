@@ -2,6 +2,7 @@
 
 .some-x-axis {
   .text {
+      text-anchor: start;
       transform: rotate(45deg);
   }
   .line {
