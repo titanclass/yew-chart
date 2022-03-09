@@ -23,20 +23,20 @@ pub struct TimeAxisScale {
     time_to: i64,
     step: i64,
     scale: f32,
-    labeller: Rc<Labeller>,
+    labeller: Option<Rc<Labeller>>,
 }
 
 impl TimeAxisScale {
     /// Create a new scale with a range and step representing labels as a day and month in local time.
     pub fn new(range: Range<DateTime<Utc>>, step: Duration) -> TimeAxisScale {
-        Self::with_labeller(range, step, Rc::new(labeller()))
+        Self::with_labeller(range, step, Some(Rc::from(labeller())))
     }
 
     /// Create a new scale with a range and step and custom labeller.
     pub fn with_labeller(
         range: Range<DateTime<Utc>>,
         step: Duration,
-        labeller: Rc<Box<Labeller>>,
+        labeller: Option<Rc<Labeller>>,
     ) -> TimeAxisScale {
         let time_from = range.start.timestamp();
         let time_to = range.end.timestamp();
@@ -63,7 +63,7 @@ impl AxisScale for TimeAxisScale {
                 let location = (i - scale.time_from) as f32 * scale.scale;
                 AxisTick {
                     location: NormalisedValue(location),
-                    label: (self.labeller)(i),
+                    label: self.labeller.as_ref().map(|l| (l)(i)),
                 }
             })
             .collect()
@@ -92,23 +92,23 @@ mod tests {
             vec![
                 AxisTick {
                     location: NormalisedValue(0.0),
-                    label: "26-Feb".to_string()
+                    label: Some("26-Feb".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.25),
-                    label: "27-Feb".to_string()
+                    label: Some("27-Feb".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.5),
-                    label: "28-Feb".to_string()
+                    label: Some("28-Feb".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(0.75),
-                    label: "01-Mar".to_string()
+                    label: Some("01-Mar".to_string())
                 },
                 AxisTick {
                     location: NormalisedValue(1.0),
-                    label: "02-Mar".to_string()
+                    label: Some("02-Mar".to_string())
                 }
             ]
         );

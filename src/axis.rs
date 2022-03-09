@@ -27,6 +27,6 @@ pub struct AxisTick {
     /// the position at which the tick should be rendered
     pub location: NormalisedValue,
 
-    /// The label that should be rendered alongside the tick
-    pub label: String,
+    /// An optional label that should be rendered alongside the tick
+    pub label: Option<String>,
 }
