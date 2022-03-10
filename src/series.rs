@@ -13,19 +13,19 @@ use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
 use yew::{prelude::*, virtual_dom::VNode};
 
-use crate::axis::AxisScale;
+use crate::axis::Scale;
 
 /// Describes a closure that takes data values (x, y) and produces Html as the label
-pub type SeriesDataLabeller = dyn Fn(f32, f32) -> Html;
+pub type Labeller = dyn Fn(f32, f32) -> Html;
 
 /// Describes a data series with each point optionally receiving a labeller
-pub type SeriesData = Vec<(f32, f32, Option<Rc<SeriesDataLabeller>>)>;
+pub type Data = Vec<(f32, f32, Option<Rc<Labeller>>)>;
 
 const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
 // A convenience for using an optional string as a label along with a circle dot.
-fn label(text: Option<String>) -> Box<SeriesDataLabeller> {
+fn label(text: Option<String>) -> Box<Labeller> {
     Box::new(move |x, y| {
         html! {
             <>
@@ -38,13 +38,13 @@ fn label(text: Option<String>) -> Box<SeriesDataLabeller> {
     })
 }
 
-/// A a circle dot label.
-pub fn circle_label() -> Box<SeriesDataLabeller> {
+/// A circle dot label.
+pub fn circle_label() -> Box<Labeller> {
     label(None)
 }
 
-/// A a circle dot label with associated text.
-pub fn circle_text_label(text: &str) -> Box<SeriesDataLabeller> {
+/// A circle dot label with associated text.
+pub fn circle_text_label(text: &str) -> Box<Labeller> {
     label(Some(text.to_string()))
 }
 
@@ -54,7 +54,7 @@ pub enum Msg {
 
 /// Describes how to process each item of series data
 #[derive(Clone, PartialEq)]
-pub enum SeriesType {
+pub enum Type {
     /// Plots the data points as bars
     Bar,
     /// Plots the data points as lines
@@ -65,13 +65,13 @@ pub enum SeriesType {
 
 #[derive(Properties, Clone)]
 pub struct Props {
-    pub data: Rc<SeriesData>,
+    pub data: Rc<Data>,
     pub height: f32,
-    pub horizontal_scale: Rc<dyn AxisScale>,
+    pub horizontal_scale: Rc<dyn Scale>,
     pub horizontal_scale_step: f32,
     pub name: String,
-    pub series_type: SeriesType,
-    pub vertical_scale: Rc<dyn AxisScale>,
+    pub series_type: Type,
+    pub vertical_scale: Rc<dyn Scale>,
     pub width: f32,
     pub x: f32,
     pub y: f32,
@@ -104,18 +104,18 @@ struct DerivedProps {
     svg_elements: Vec<Html>,
 }
 
-pub struct HorizontalSeries {
+pub struct Series {
     derived_props: DerivedProps,
     _resize_listener: EventListener,
     svg: NodeRef,
 }
 
-impl HorizontalSeries {
+impl Series {
     fn derive_props(props: &Props) -> DerivedProps {
-        let classes = classes!("horizontal-series", props.name.to_owned());
+        let classes = classes!("series", props.name.to_owned());
 
-        let x_scale = props.width as f32;
-        let y_scale = props.height as f32;
+        let x_scale = props.width;
+        let y_scale = props.height;
 
         let mut svg_elements = Vec::<Html>::with_capacity(props.data.len() * 2);
 
@@ -165,7 +165,7 @@ fn draw_chart(
     classes: &Classes,
 ) {
     match props.series_type {
-        SeriesType::Bar => {
+        Type::Bar => {
             for point in element_points.iter() {
                 let x1 = point.0;
                 let y1 = point.1;
@@ -179,7 +179,7 @@ fn draw_chart(
                 }
             }
         }
-        SeriesType::Line => {
+        Type::Line => {
             let points = element_points
                 .iter()
                 .map(|(x, y)| format!("{},{} ", x, y))
@@ -187,18 +187,18 @@ fn draw_chart(
             svg_elements
                 .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
         }
-        SeriesType::Scatter => (),
+        Type::Scatter => (),
     }
 }
 
-impl Component for HorizontalSeries {
+impl Component for Series {
     type Message = Msg;
 
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
         let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
-        HorizontalSeries {
+        Series {
             derived_props: Self::derive_props(ctx.props()),
             _resize_listener: EventListener::new(&gloo_utils::window(), "resize", move |e| {
                 on_resize.emit(e.clone())
@@ -238,7 +238,7 @@ impl Component for HorizontalSeries {
             .and_then(|n| n.dyn_into::<SvgElement>().ok())
         {
             let width = svg_element.get_bounding_client_rect().width() as f32;
-            let scale = p.width as f32 / width;
+            let scale = p.width / width;
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));

@@ -4,7 +4,7 @@ use chrono::TimeZone;
 use chrono::{DateTime, Duration, Local, Utc};
 use std::{ops::Range, rc::Rc};
 
-use crate::axis::{AxisScale, AxisTick, NormalisedValue};
+use crate::axis::{NormalisedValue, Scale, Tick};
 
 /// An axis labeller is a closure that produces a string given a value within the axis scale
 pub type Labeller = dyn Fn(i64) -> String;
@@ -18,7 +18,7 @@ fn labeller() -> Box<Labeller> {
 }
 
 #[derive(Clone)]
-pub struct TimeAxisScale {
+pub struct TimeScale {
     time_from: i64,
     time_to: i64,
     step: i64,
@@ -26,9 +26,9 @@ pub struct TimeAxisScale {
     labeller: Option<Rc<Labeller>>,
 }
 
-impl TimeAxisScale {
+impl TimeScale {
     /// Create a new scale with a range and step representing labels as a day and month in local time.
-    pub fn new(range: Range<DateTime<Utc>>, step: Duration) -> TimeAxisScale {
+    pub fn new(range: Range<DateTime<Utc>>, step: Duration) -> TimeScale {
         Self::with_labeller(range, step, Some(Rc::from(labeller())))
     }
 
@@ -37,13 +37,13 @@ impl TimeAxisScale {
         range: Range<DateTime<Utc>>,
         step: Duration,
         labeller: Option<Rc<Labeller>>,
-    ) -> TimeAxisScale {
+    ) -> TimeScale {
         let time_from = range.start.timestamp();
         let time_to = range.end.timestamp();
         let step = step.num_seconds();
         let scale = 1.0 / (time_to - time_from) as f32;
 
-        TimeAxisScale {
+        TimeScale {
             time_from,
             time_to,
             step,
@@ -53,15 +53,15 @@ impl TimeAxisScale {
     }
 }
 
-impl AxisScale for TimeAxisScale {
-    fn ticks(&self) -> Vec<AxisTick> {
+impl Scale for TimeScale {
+    fn ticks(&self) -> Vec<Tick> {
         let scale = self.clone();
         ((self.time_from)..self.time_to + 1)
             .into_iter()
             .step_by(scale.step as usize)
             .map(move |i| {
                 let location = (i - scale.time_from) as f32 * scale.scale;
-                AxisTick {
+                Tick {
                     location: NormalisedValue(location),
                     label: self.labeller.as_ref().map(|l| (l)(i)),
                 }
@@ -85,28 +85,28 @@ mod tests {
         let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
         let start_date = end_date.sub(Duration::days(4));
         let range = start_date.into()..end_date.into();
-        let scale = TimeAxisScale::new(range, Duration::days(1));
+        let scale = TimeScale::new(range, Duration::days(1));
 
         assert_eq!(
             scale.ticks(),
             vec![
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.0),
                     label: Some("26-Feb".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.25),
                     label: Some("27-Feb".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.5),
                     label: Some("28-Feb".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.75),
                     label: Some("01-Mar".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(1.0),
                     label: Some("02-Mar".to_string())
                 }
