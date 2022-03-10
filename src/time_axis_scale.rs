@@ -10,7 +10,7 @@ use crate::axis::{NormalisedValue, Scale, Tick};
 pub type Labeller = dyn Fn(i64) -> String;
 
 fn labeller() -> Box<Labeller> {
-    Box::new(move |ts| {
+    Box::new(|ts| {
         let utc_date_time = Utc.timestamp(ts, 0);
         let local_date_time: DateTime<Local> = utc_date_time.into();
         local_date_time.format("%d-%b").to_string()

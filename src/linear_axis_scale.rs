@@ -8,7 +8,7 @@ use crate::axis::{NormalisedValue, Scale, Tick};
 pub type Labeller = dyn Fn(f32) -> String;
 
 fn labeller() -> Box<Labeller> {
-    Box::new(move |v| (v as u32).to_string())
+    Box::new(|v| (v as u32).to_string())
 }
 
 #[derive(Clone)]
