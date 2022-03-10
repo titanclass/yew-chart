@@ -9,11 +9,11 @@ use crate::axis::{NormalisedValue, Scale, Tick};
 /// An axis labeller is a closure that produces a string given a value within the axis scale
 pub type Labeller = dyn Fn(i64) -> String;
 
-fn labeller() -> Box<Labeller> {
-    Box::new(|ts| {
+fn local_time_labeller(format: &'static str) -> Box<Labeller> {
+    Box::new(move |ts| {
         let utc_date_time = Utc.timestamp(ts, 0);
         let local_date_time: DateTime<Local> = utc_date_time.into();
-        local_date_time.format("%d-%b").to_string()
+        local_date_time.format(format).to_string()
     })
 }
 
@@ -29,7 +29,16 @@ pub struct TimeScale {
 impl TimeScale {
     /// Create a new scale with a range and step representing labels as a day and month in local time.
     pub fn new(range: Range<DateTime<Utc>>, step: Duration) -> TimeScale {
-        Self::with_labeller(range, step, Some(Rc::from(labeller())))
+        Self::with_local_time_labeller(range, step, "%d-%b")
+    }
+
+    /// Create a new scale with a range and step and local time labeller with a supplied format.
+    pub fn with_local_time_labeller(
+        range: Range<DateTime<Utc>>,
+        step: Duration,
+        format: &'static str,
+    ) -> TimeScale {
+        Self::with_labeller(range, step, Some(Rc::from(local_time_labeller(format))))
     }
 
     /// Create a new scale with a range and step and custom labeller.
