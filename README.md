@@ -40,7 +40,7 @@ fn app() -> Html {
     let start_date = end_date.sub(Duration::days(4));
     let timespan = start_date..end_date;
 
-    let circle_text_labeller = Rc::from(horizontal_series::circle_text_label("Label"));
+    let circle_text_labeller = Rc::from(series::circle_text_label("Label"));
 
     let data_set = Rc::new(vec![
         (start_date.timestamp() as f32, 1.0, None),
@@ -66,13 +66,13 @@ fn app() -> Html {
         ),
     ]);
 
-    let h_scale = Rc::new(TimeAxisScale::new(timespan, Duration::days(1))) as Rc<dyn AxisScale>;
-    let v_scale = Rc::new(LinearAxisScale::new(0.0..5.0, 1.0)) as Rc<dyn AxisScale>;
+    let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale>;
+    let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale>;
 
     html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
-                <HorizontalSeries
-                    series_type={horizontal_series::SeriesType::Line}
+                <Series
+                    series_type={Type::Line}
                     name="some-series"
                     data={data_set}
                     horizontal_scale={Rc::clone(&h_scale)}
@@ -80,20 +80,21 @@ fn app() -> Html {
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
-                <VerticalAxis
+                <Axis
                     name="some-y-axis"
-                    orientation={vertical_axis::Orientation::Left}
+                    orientation={Orientation::Left}
                     scale={Rc::clone(&v_scale)}
-                    x1={MARGIN} y1={MARGIN} y2={HEIGHT - MARGIN}
+                    x1={MARGIN} y1={MARGIN} xy2={HEIGHT - MARGIN}
                     tick_len={TICK_LENGTH}
                     title={"Some Y thing".to_string()} />
 
-                <HorizontalAxis
+                <Axis
                     name="some-x-axis"
-                    orientation={horizontal_axis::Orientation::Bottom}
+                    orientation={Orientation::Bottom}
                     scale={Rc::clone(&h_scale)}
-                    x1={MARGIN} y1={HEIGHT - MARGIN} x2={WIDTH - MARGIN}
-                    tick_len={TICK_LENGTH} />
+                    x1={MARGIN} y1={HEIGHT - MARGIN} xy2={WIDTH - MARGIN}
+                    tick_len={TICK_LENGTH}
+                    title={"Some X thing".to_string()} />
 
             </svg>
     }
@@ -110,10 +111,10 @@ fn app() -> Html {
 
 ### Bar Chart
 
-Using the same Yew view method code as above, `series_type` within the `HorizontalSeries` tag can be edited to display a bar chart instead by using the `Bar` keys.
+Using the same Yew view method code as above, `series_type` within the `Series` tag can be edited to display a bar chart instead by using the `Bar` keys.
 
 ```rust
-<HorizontalSeries series_type={horizontal_series::SeriesType::Bar} ... />
+<Series series_type={SeriesType::Bar} ... />
 ```
 
 <p align="center"><img src="./images/bar-chart-30px.png" alt="A bar chart" width="70%" /></p>

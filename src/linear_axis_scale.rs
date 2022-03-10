@@ -1,8 +1,8 @@
-/// A LinearAxisScale represents a linear scale for floating point values within a fixed range.
+/// A LinearScale represents a linear scale for floating point values within a fixed range.
 /// A step is also expressed and indicates the interval to be used for each tick on the axis.
 use std::{ops::Range, rc::Rc};
 
-use crate::axis::{AxisScale, AxisTick, NormalisedValue};
+use crate::axis::{NormalisedValue, Scale, Tick};
 
 /// An axis labeller is a closure that produces a string given a value within the axis scale
 pub type Labeller = dyn Fn(f32) -> String;
@@ -12,16 +12,16 @@ fn labeller() -> Box<Labeller> {
 }
 
 #[derive(Clone)]
-pub struct LinearAxisScale {
+pub struct LinearScale {
     range: Range<f32>,
     step: f32,
     scale: f32,
     labeller: Option<Rc<Labeller>>,
 }
 
-impl LinearAxisScale {
+impl LinearScale {
     /// Create a new scale with a range and step and labels as a integers
-    pub fn new(range: Range<f32>, step: f32) -> LinearAxisScale {
+    pub fn new(range: Range<f32>, step: f32) -> LinearScale {
         Self::with_labeller(range, step, Some(Rc::from(labeller())))
     }
 
@@ -30,9 +30,9 @@ impl LinearAxisScale {
         range: Range<f32>,
         step: f32,
         labeller: Option<Rc<Labeller>>,
-    ) -> LinearAxisScale {
+    ) -> LinearScale {
         let scale = 1.0 / (range.end - range.start);
-        LinearAxisScale {
+        LinearScale {
             range,
             step,
             scale,
@@ -41,8 +41,8 @@ impl LinearAxisScale {
     }
 }
 
-impl AxisScale for LinearAxisScale {
-    fn ticks(&self) -> Vec<AxisTick> {
+impl Scale for LinearScale {
+    fn ticks(&self) -> Vec<Tick> {
         let scale = self.clone();
         let step_number = ((scale.range.end - scale.range.start) / scale.step).floor() as i32;
         let step_size = scale.scale * scale.step;
@@ -51,7 +51,7 @@ impl AxisScale for LinearAxisScale {
             .map(move |i| {
                 let location = i as f32 * step_size;
                 let value = scale.range.start + (i as f32 * scale.step);
-                AxisTick {
+                Tick {
                     location: NormalisedValue(location),
                     label: self.labeller.as_ref().map(|l| (l)(value)),
                 }
@@ -70,28 +70,28 @@ mod tests {
 
     #[test]
     fn test_scale() {
-        let scale = LinearAxisScale::new(0.0..100.0, 25.0);
+        let scale = LinearScale::new(0.0..100.0, 25.0);
 
         assert_eq!(
             scale.ticks(),
             vec![
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.0),
                     label: Some("0".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.25),
                     label: Some("25".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.5),
                     label: Some("50".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(0.75),
                     label: Some("75".to_string())
                 },
-                AxisTick {
+                Tick {
                     location: NormalisedValue(1.0),
                     label: Some("100".to_string())
                 }

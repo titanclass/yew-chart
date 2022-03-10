@@ -1,31 +1,40 @@
 // Typical settings for all charts
 
-.some-x-axis {
-  .text {
-      transform: rotate(45deg);
+.chart {
+  .axis.left {
+    .title {
+      transform: rotate(270deg);
+    }
   }
-  .line {
-    stroke: grey;
-  }
-  .tick {
-    stroke: grey;
-  }
-}
-
-.axis-y {
-  .line {
-    stroke: grey;
-  }
-  .tick {
-    stroke: grey;
+  .axis.right {
+    .title {
+      transform: rotate(90deg);
+    }
   }
 }
 
-// Typical settings for our specific chart
+
+// Settings for our specific chart
 
 .chart {
   max-width: 1332px;
 
+  .axis {
+    .line {
+      stroke: grey;
+    }
+    .tick {
+      stroke: grey;
+    }
+  }
+
+  .some-x-axis {
+    .text {
+      text-anchor: start;
+      transform: rotate(45deg);
+    }
+  }
+  
   .some-y-axis {
     .title tspan {
       fill: green;
@@ -33,7 +42,7 @@
     }
   }
 
-  .horizontal-series.some-series {
+  .series.some-series {
     stroke: green;
     stroke-width: 2px;
 
@@ -48,7 +57,7 @@
     }
   }
 
-  .horizontal-series.bar-chart {
+  .series.bar-chart {
     stroke-width: 30px;
   }
 }

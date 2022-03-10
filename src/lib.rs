@@ -2,8 +2,6 @@
 /// By leveraging these SVG-based components many types of charts can be formed
 /// with a great deal of flexibility.
 pub mod axis;
-pub mod horizontal_axis;
-pub mod horizontal_series;
 pub mod linear_axis_scale;
+pub mod series;
 pub mod time_axis_scale;
-pub mod vertical_axis;
