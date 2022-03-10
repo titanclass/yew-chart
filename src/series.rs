@@ -38,12 +38,12 @@ fn label(text: Option<String>) -> Box<Labeller> {
     })
 }
 
-/// A a circle dot label.
+/// A circle dot label.
 pub fn circle_label() -> Box<Labeller> {
     label(None)
 }
 
-/// A a circle dot label with associated text.
+/// A circle dot label with associated text.
 pub fn circle_text_label(text: &str) -> Box<Labeller> {
     label(Some(text.to_string()))
 }
@@ -114,8 +114,8 @@ impl Series {
     fn derive_props(props: &Props) -> DerivedProps {
         let classes = classes!("series", props.name.to_owned());
 
-        let x_scale = props.width as f32;
-        let y_scale = props.height as f32;
+        let x_scale = props.width;
+        let y_scale = props.height;
 
         let mut svg_elements = Vec::<Html>::with_capacity(props.data.len() * 2);
 
@@ -238,7 +238,7 @@ impl Component for Series {
             .and_then(|n| n.dyn_into::<SvgElement>().ok())
         {
             let width = svg_element.get_bounding_client_rect().width() as f32;
-            let scale = p.width as f32 / width;
+            let scale = p.width / width;
             let font_size = scale * 100f32;
             let _ = element.set_attribute("font-size", &format!("{}%", &font_size));
             let _ = element.set_attribute("style", &format!("stroke-width: {}", scale));

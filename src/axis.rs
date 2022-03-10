@@ -146,7 +146,7 @@ impl Component for Axis {
         };
 
         if p.orientation == Orientation::Left || p.orientation == Orientation::Right {
-            let scale = (p.xy2 - p.y1) as f32;
+            let scale = p.xy2 - p.y1;
             let x = p.x1;
             let to_x = if p.orientation == Orientation::Left {
                 x - p.tick_len
@@ -158,7 +158,7 @@ impl Component for Axis {
                 <svg ref={self.svg.clone()} class={classes!("axis", class, p.name.to_owned())}>
                     <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x1.to_string()} y2={p.xy2.to_string()} class="line" />
                     { for (p.scale.ticks().iter()).map(|Tick { location: NormalisedValue(normalised_location), label }| {
-                        let y = (p.xy2 as f32 - (normalised_location * scale)) as u32;
+                        let y = (p.xy2 - (normalised_location * scale)) as u32;
                         html! {
                         <>
                             <line x1={x.to_string()} y1={y.to_string()} x2={to_x.to_string()} y2={y.to_string()} class="tick" />
@@ -181,7 +181,7 @@ impl Component for Axis {
                 </svg>
             }
         } else {
-            let scale = (p.xy2 - p.x1) as f32;
+            let scale = p.xy2 - p.x1;
             let y = p.y1;
             let (to_y, baseline) = if p.orientation == Orientation::Top {
                 (y - p.tick_len, "auto")
@@ -193,7 +193,7 @@ impl Component for Axis {
                 <svg ref={self.svg.clone()} class={classes!("axis", class, p.name.to_owned())}>
                     <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.xy2.to_string()} y2={p.y1.to_string()} class="line" />
                     { for(p.scale.ticks().iter()).map(|Tick { location: NormalisedValue(normalised_location), label }| {
-                        let x = p.x1 as f32 + normalised_location * scale;
+                        let x = p.x1 + normalised_location * scale;
                         html! {
                         <>
                             <line x1={x.to_string()} y1={y.to_string()} x2={x.to_string()} y2={to_y.to_string()} class="tick" />
