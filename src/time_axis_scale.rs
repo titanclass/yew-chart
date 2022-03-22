@@ -11,7 +11,7 @@ pub type Labeller = dyn Fn(i64) -> String;
 
 fn local_time_labeller(format: &'static str) -> Box<Labeller> {
     Box::new(move |ts| {
-        let utc_date_time = Utc.timestamp(ts, 0);
+        let utc_date_time = Utc.timestamp_millis(ts);
         let local_date_time: DateTime<Local> = utc_date_time.into();
         local_date_time.format(format).to_string()
     })
@@ -47,10 +47,11 @@ impl TimeScale {
         step: Duration,
         labeller: Option<Rc<Labeller>>,
     ) -> TimeScale {
-        let time_from = range.start.timestamp();
-        let time_to = range.end.timestamp();
-        let step = step.num_seconds();
-        let scale = 1.0 / (time_to - time_from) as f32;
+        let time_from = range.start.timestamp_millis();
+        let time_to = range.end.timestamp_millis();
+        let delta = time_to - time_from;
+        let scale = if delta != 0 { 1.0 / delta as f32 } else { 1.0 };
+        let step = step.num_milliseconds();
 
         TimeScale {
             time_from,
@@ -64,12 +65,11 @@ impl TimeScale {
 
 impl Scale for TimeScale {
     fn ticks(&self) -> Vec<Tick> {
-        let scale = self.clone();
         ((self.time_from)..self.time_to + 1)
             .into_iter()
-            .step_by(scale.step as usize)
+            .step_by(self.step as usize)
             .map(move |i| {
-                let location = (i - scale.time_from) as f32 * scale.scale;
+                let location = (i - self.time_from) as f32 * self.scale;
                 Tick {
                     location: NormalisedValue(location),
                     label: self.labeller.as_ref().map(|l| (l)(i)),
@@ -123,8 +123,29 @@ mod tests {
         );
 
         assert_eq!(
-            scale.normalise(end_date.sub(Duration::days(2)).timestamp() as f32),
-            NormalisedValue(0.5)
+            scale.normalise(end_date.sub(Duration::days(2)).timestamp_millis() as f32),
+            NormalisedValue(0.4998637)
+        );
+    }
+
+    #[test]
+    fn test_zero_range() {
+        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let start_date = end_date.clone();
+        let range = start_date.into()..end_date.into();
+        let scale = TimeScale::new(range, Duration::days(1));
+
+        assert_eq!(
+            scale.ticks(),
+            vec![Tick {
+                location: NormalisedValue(0.0),
+                label: Some("02-Mar".to_string())
+            },]
+        );
+
+        assert_eq!(
+            scale.normalise(end_date.timestamp_millis() as f32),
+            NormalisedValue(0.0)
         );
     }
 }

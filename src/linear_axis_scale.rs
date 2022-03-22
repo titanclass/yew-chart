@@ -31,7 +31,8 @@ impl LinearScale {
         step: f32,
         labeller: Option<Rc<Labeller>>,
     ) -> LinearScale {
-        let scale = 1.0 / (range.end - range.start);
+        let delta = range.end - range.start;
+        let scale = if delta != 0.0 { 1.0 / delta } else { 1.0 };
         LinearScale {
             range,
             step,
@@ -43,14 +44,13 @@ impl LinearScale {
 
 impl Scale for LinearScale {
     fn ticks(&self) -> Vec<Tick> {
-        let scale = self.clone();
-        let step_number = ((scale.range.end - scale.range.start) / scale.step).floor() as i32;
-        let step_size = scale.scale * scale.step;
+        let step_number = ((self.range.end - self.range.start) / self.step).floor() as i32;
+        let step_size = self.scale * self.step;
         (0..step_number + 1)
             .into_iter()
             .map(move |i| {
                 let location = i as f32 * step_size;
-                let value = scale.range.start + (i as f32 * scale.step);
+                let value = self.range.start + (i as f32 * self.step);
                 Tick {
                     location: NormalisedValue(location),
                     label: self.labeller.as_ref().map(|l| (l)(value)),
@@ -99,5 +99,57 @@ mod tests {
         );
 
         assert_eq!(scale.normalise(50.0), NormalisedValue(0.5));
+    }
+
+    #[test]
+    fn test_precise_scale() {
+        fn float_labeller() -> Box<Labeller> {
+            Box::new(|v| format!("{:3.2}", v))
+        }
+
+        let scale = LinearScale::with_labeller(0.0..1.0, 0.25, Some(Rc::from(float_labeller())));
+
+        assert_eq!(
+            scale.ticks(),
+            vec![
+                Tick {
+                    location: NormalisedValue(0.0),
+                    label: Some("0.00".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.25),
+                    label: Some("0.25".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.5),
+                    label: Some("0.50".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.75),
+                    label: Some("0.75".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(1.0),
+                    label: Some("1.00".to_string())
+                }
+            ]
+        );
+
+        assert_eq!(scale.normalise(0.5), NormalisedValue(0.5));
+    }
+
+    #[test]
+    fn test_zero_range() {
+        let scale = LinearScale::new(1.0..1.0, 0.25);
+
+        assert_eq!(
+            scale.ticks(),
+            vec![Tick {
+                location: NormalisedValue(0.0),
+                label: Some("1".to_string())
+            },]
+        );
+
+        assert_eq!(scale.normalise(1.0), NormalisedValue(0.0));
     }
 }
