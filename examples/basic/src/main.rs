@@ -26,24 +26,24 @@ fn app() -> Html {
     let circle_text_labeller = Rc::from(series::circle_text_label("Label"));
 
     let data_set = Rc::new(vec![
-        (start_date.timestamp() as f32, 1.0, None),
+        (start_date.timestamp_millis() as f32, 1.0, None),
         (
-            start_date.add(Duration::days(1)).timestamp() as f32,
+            start_date.add(Duration::days(1)).timestamp_millis() as f32,
             4.0,
             None,
         ),
         (
-            start_date.add(Duration::days(2)).timestamp() as f32,
+            start_date.add(Duration::days(2)).timestamp_millis() as f32,
             3.0,
             None,
         ),
         (
-            start_date.add(Duration::days(3)).timestamp() as f32,
+            start_date.add(Duration::days(3)).timestamp_millis() as f32,
             2.0,
             None,
         ),
         (
-            start_date.add(Duration::days(4)).timestamp() as f32,
+            start_date.add(Duration::days(4)).timestamp_millis() as f32,
             5.0,
             Some(circle_text_labeller),
         ),
@@ -59,7 +59,7 @@ fn app() -> Html {
                     name="some-series"
                     data={data_set}
                     horizontal_scale={Rc::clone(&h_scale)}
-                    horizontal_scale_step={Duration::days(2).num_seconds() as f32}
+                    horizontal_scale_step={Duration::days(2).num_milliseconds() as f32}
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
