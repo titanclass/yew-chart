@@ -68,8 +68,8 @@ pub enum Type {
 pub enum BarType {
     //The bars begin at the bottom of the graph and rise
     Rise,
-    //The bars begin at the top of the graph and drop
-    Drop
+    //The bars begin at the top of the graph and drops
+    Drop,
 }
 
 #[derive(Properties, Clone)]
