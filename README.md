@@ -114,10 +114,21 @@ fn app() -> Html {
 Using the same Yew view method code as above, `series_type` within the `Series` tag can be edited to display a bar chart instead by using the `Bar` keys.
 
 ```rust
-<Series series_type={SeriesType::Bar} ... />
+<Series series_type={Type::Bar(BarType::Rise)} ... />
 ```
 
-<p align="center"><img src="./images/bar-chart-30px.png" alt="A bar chart" width="70%" /></p>
+<p align="center"><img src="./images/bartype_rise.png" alt="A rising bar chart" width="70%" /></p>
+
+The bar chart can also be made to 'drop' instead of 'rise' with the enum variant `BarType`. This is particularly helpful if using negative axis values, where the bars are dropping from `y = 0` or similar. 
+
+The same data as above produces the following graph.
+
+```rust
+<Series series_type={Type::Bar(BarType::Drop)} ... />
+```
+
+<p align="center"><img src="./images/bartype_drop.png" alt="A dropping bar chart" width="70%" /></p>
+
 
 ### Scatter Plot
 
