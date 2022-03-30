@@ -56,11 +56,20 @@ pub enum Msg {
 #[derive(Clone, PartialEq)]
 pub enum Type {
     /// Plots the data points as bars
-    Bar,
+    Bar(BarType),
     /// Plots the data points as lines
     Line,
     /// Does not join the data points - relies on a labeller
     Scatter,
+}
+
+//Describes the direction that the bars in a Bar Chart point
+#[derive(PartialEq, Clone, Copy)]
+pub enum BarType {
+    //The bars begin at the bottom of the graph and rise
+    Rise,
+    //The bars begin at the top of the graph and drop
+    Drop
 }
 
 #[derive(Properties, Clone)]
@@ -165,12 +174,16 @@ fn draw_chart(
     classes: &Classes,
 ) {
     match props.series_type {
-        Type::Bar => {
+        Type::Bar(bar_type) => {
             for point in element_points.iter() {
                 let x1 = point.0;
-                let y1 = point.1;
                 let x2 = x1;
-                let y2 = props.height + props.y;
+
+                let (y1, y2) = match bar_type {
+                    BarType::Rise => (point.1, props.height + props.y),
+                    BarType::Drop => (props.y, point.1),
+                };
+
                 if y1 != y2 {
                     svg_elements.push(
                         html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()}
