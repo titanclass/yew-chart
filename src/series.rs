@@ -18,6 +18,10 @@ use crate::axis::Scale;
 /// Describes a closure that takes data values (x, y) and produces Html as the label
 pub type Labeller = dyn Fn(f32, f32) -> Html;
 
+/// Describes a closure that takes data values (x, y) and produces tooltip strings for
+/// each datapoint.
+pub type Tooltipper = dyn Fn(f32, f32) -> String;
+
 /// Describes a data series with each point optionally receiving a labeller
 pub type Data = Vec<(f32, f32, Option<Rc<Labeller>>)>;
 
@@ -46,6 +50,11 @@ pub fn circle_label() -> Box<Labeller> {
 /// A circle dot label with associated text.
 pub fn circle_text_label(text: &str) -> Box<Labeller> {
     label(Some(text.to_string()))
+}
+
+/// Basic tooltip that just outputs a y value
+pub fn y_tooltip() -> Box<Tooltipper> {
+    Box::new(|_, y| (y as u32).to_string())
 }
 
 pub enum Msg {
@@ -80,6 +89,7 @@ pub struct Props {
     pub horizontal_scale_step: f32,
     pub name: String,
     pub series_type: Type,
+    pub tooltipper: Option<Rc<Tooltipper>>,
     pub vertical_scale: Rc<dyn Scale>,
     pub width: f32,
     pub x: f32,
@@ -88,14 +98,18 @@ pub struct Props {
 
 impl PartialEq for Props {
     fn eq(&self, other: &Self) -> bool {
-        self.series_type == other.series_type
-            && self.name == other.name
-            && Rc::ptr_eq(&self.data, &other.data)
+        Rc::ptr_eq(&self.data, &other.data)
+            && self.height == other.height
             && self.horizontal_scale_step == other.horizontal_scale_step
+            && self.name == other.name
+            && self.series_type == other.series_type
+            && match (self.tooltipper.as_ref(), other.tooltipper.as_ref()) {
+                (Some(left), Some(right)) => std::ptr::eq(&*left as *const _ as *const u8, &*right as *const _ as *const u8),
+                _=> false
+            }
+            && self.width == other.width
             && self.x == other.x
             && self.y == other.y
-            && self.height == other.height
-            && self.width == other.width
             // test reference equality, avoiding issues with vtables discussed in
             // https://github.com/rust-lang/rust/issues/46139
             && std::ptr::eq(
@@ -129,22 +143,23 @@ impl Series {
         let mut svg_elements = Vec::<Html>::with_capacity(props.data.len() * 2);
 
         if props.data.len() > 0 {
-            let mut element_points = Vec::<(f32, f32)>::with_capacity(props.data.len());
+            let mut element_points = Vec::<(f32, f32, f32, f32)>::with_capacity(props.data.len());
 
             let mut top_y = props.height;
 
             let data_step = props.horizontal_scale_step;
             let mut last_data_step = -data_step;
             for (data_x, data_y, labeller) in props.data.iter() {
+                let (data_x, data_y) = (*data_x, *data_y);
                 let step = (data_x / data_step) * data_step;
                 if step - last_data_step > data_step {
                     draw_chart(&element_points, props, &mut svg_elements, &classes);
                     element_points.clear();
                 }
-                let x = (props.horizontal_scale.normalise(*data_x).0 * x_scale.min(props.width))
+                let x = (props.horizontal_scale.normalise(data_x).0 * x_scale.min(props.width))
                     + props.x;
                 let y = props.height
-                    - (props.vertical_scale.normalise(*data_y).0 * y_scale).min(props.height)
+                    - (props.vertical_scale.normalise(data_y).0 * y_scale).min(props.height)
                     + props.y;
 
                 if let Some(l) = labeller {
@@ -156,7 +171,7 @@ impl Series {
                 }
 
                 top_y = top_y.min(y);
-                element_points.push((x, y));
+                element_points.push((data_x, data_y, x, y));
 
                 last_data_step = step;
             }
@@ -168,7 +183,7 @@ impl Series {
 }
 
 fn draw_chart(
-    element_points: &[(f32, f32)],
+    element_points: &[(f32, f32, f32, f32)],
     props: &Props,
     svg_elements: &mut Vec<VNode>,
     classes: &Classes,
@@ -176,29 +191,58 @@ fn draw_chart(
     match props.series_type {
         Type::Bar(bar_type) => {
             for point in element_points.iter() {
-                let x1 = point.0;
-                let x2 = x1;
+                let (data_x, data_y1, x, y1) = *point;
 
                 let (y1, y2) = match bar_type {
-                    BarType::Rise => (point.1, props.height + props.y),
-                    BarType::Drop => (props.y, point.1),
+                    BarType::Rise => (y1, props.height + props.y),
+                    BarType::Drop => (props.y, y1),
                 };
 
                 if y1 != y2 {
                     svg_elements.push(
-                        html!(<line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()}
-                            class={classes!(classes.to_owned(), "bar-chart")}/>)
+                        html! {
+                            <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
+                                class={classes!(classes.to_owned(), "bar-chart")}>
+                            {
+                                if let Some(tt) = props.tooltipper.as_ref() {
+                                    html! {
+                                        <title>{tt(data_x, data_y1)}</title>
+                                    }
+                                } else {
+                                    html!()
+                                }
+                            }
+                            </line>
+                        }
                     );
                 }
             }
         }
         Type::Line => {
-            let points = element_points
-                .iter()
-                .map(|(x, y)| format!("{},{} ", x, y))
-                .collect::<String>();
-            svg_elements
-                .push(html!(<polyline points={points} class={classes.to_owned()} fill="none"/>));
+            let mut last_point: Option<(f32, f32, f32, f32)> = None;
+            for point in element_points.iter() {
+                let (data_x2, data_y2, x2, y2) = *point;
+
+                if let Some((data_x1, data_y1, x1, y1)) = last_point {
+                    svg_elements.push(
+                            html! {
+                                <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none">
+                                {
+                                    if let Some(tt) = props.tooltipper.as_ref() {
+                                        html! {
+                                            <title>{tt(data_x1, data_y1)}{"-"}{tt(data_x2, data_y2)}</title>
+                                        }
+                                    } else {
+                                        html!()
+                                    }
+                                }
+                                </line>
+                            }
+                        );
+                }
+
+                last_point = Some(*point);
+            }
         }
         Type::Scatter => (),
     }

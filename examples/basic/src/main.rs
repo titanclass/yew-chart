@@ -52,6 +52,8 @@ fn app() -> Html {
     let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale>;
     let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale>;
 
+    let tooltip = Rc::from(series::y_tooltip());
+
     html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
                 <Series
@@ -60,6 +62,7 @@ fn app() -> Html {
                     data={data_set}
                     horizontal_scale={Rc::clone(&h_scale)}
                     horizontal_scale_step={Duration::days(2).num_milliseconds() as f32}
+                    tooltipper={Rc::clone(&tooltip)}
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
