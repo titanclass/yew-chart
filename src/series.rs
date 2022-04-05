@@ -54,7 +54,7 @@ pub fn circle_text_label(text: &str) -> Box<Labeller> {
 
 /// Basic tooltip that just outputs a y value
 pub fn y_tooltip() -> Box<Tooltipper> {
-    Box::new(|_, y| (y as u32).to_string())
+    Box::new(|_, y| (y as i32).to_string())
 }
 
 pub enum Msg {
