@@ -72,12 +72,12 @@ pub enum Type {
     Scatter,
 }
 
-//Describes the direction that the bars in a Bar Chart point
+///Describes the direction that the bars in a Bar Chart point
 #[derive(PartialEq, Clone, Copy)]
 pub enum BarType {
-    //The bars begin at the bottom of the graph and rise
+    ///Each bar begins at the bottom of the graph and rises to the given datapoint.
     Rise,
-    //The bars begin at the top of the graph and drops
+    ///Each bar begins at the top of the graph and drops to the given datapoint.
     Drop,
 }
 

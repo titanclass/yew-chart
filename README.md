@@ -121,7 +121,9 @@ Using the same Yew view method code as above, `series_type` within the `Series` 
 
 The bar chart can also be made to 'drop' instead of 'rise' with the enum variant `BarType`. This is particularly helpful if using negative axis values, where the bars are dropping from `y = 0` or similar. 
 
-The same data as above produces the following graph.
+When the `BarType` is set to `Drop`, the same data from above produces the following graph.
+
+As seen, the bars are set to go from the selected side _to_ the datapoint. Since the axis range is from `0.0` to `5.0`, and the first point is at `(26-Mar, 1.0)`, the bar drops from `5.0` to `1.0`. 
 
 ```rust
 <Series series_type={Type::Bar(BarType::Drop)} ... />
@@ -129,6 +131,9 @@ The same data as above produces the following graph.
 
 <p align="center"><img src="./images/bartype_drop.png" alt="A dropping bar chart" width="70%" /></p>
 
+One final example of this is in using a negative scale and negative values. In the following graph, the axis ranges from `-5.0` to `0.0`, and the first point is `(01-Apr, -1.0)`.
+
+<p align="center"><img src="./images/bartype_drop_negative_axis.png" alt="A dropping bar chart" width="70%" /></p>
 
 ### Scatter Plot
 
