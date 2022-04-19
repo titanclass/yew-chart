@@ -19,8 +19,7 @@ fn local_time_labeller(format: &'static str) -> Box<Labeller> {
 
 #[derive(Clone)]
 pub struct TimeScale {
-    time_from: i64,
-    time_to: i64,
+    time: Range<i64>,
     step: i64,
     scale: f32,
     labeller: Option<Rc<Labeller>>,
@@ -54,8 +53,7 @@ impl TimeScale {
         let step = step.num_milliseconds();
 
         TimeScale {
-            time_from,
-            time_to,
+            time: time_from..time_to,
             step,
             scale,
             labeller,
@@ -65,21 +63,48 @@ impl TimeScale {
 
 impl Scale for TimeScale {
     fn ticks(&self) -> Vec<Tick> {
-        ((self.time_from)..self.time_to + 1)
-            .into_iter()
-            .step_by(self.step as usize)
-            .map(move |i| {
-                let location = (i - self.time_from) as f32 * self.scale;
-                Tick {
-                    location: NormalisedValue(location),
-                    label: self.labeller.as_ref().map(|l| (l)(i)),
-                }
-            })
-            .collect()
+        TimeScaleInclusiveIter {
+            time_from: self.time.start,
+            time_to: self.time.end,
+            step: self.step,
+            first_time: true,
+        }
+        .map(move |i| {
+            let location = (i - self.time.start) as f32 * self.scale;
+            Tick {
+                location: NormalisedValue(location),
+                label: self.labeller.as_ref().map(|l| (l)(i)),
+            }
+        })
+        .collect()
     }
 
     fn normalise(&self, value: f32) -> NormalisedValue {
-        NormalisedValue((value - (self.time_from as f32)) * self.scale)
+        NormalisedValue((value - (self.time.start as f32)) * self.scale)
+    }
+}
+
+struct TimeScaleInclusiveIter {
+    pub time_from: i64,
+    pub time_to: i64,
+    pub step: i64,
+    pub first_time: bool,
+}
+
+impl Iterator for TimeScaleInclusiveIter {
+    type Item = i64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let time = if !self.first_time {
+            self.time_from.checked_add(self.step).map(|time| {
+                self.time_from = time;
+                time
+            })
+        } else {
+            self.first_time = false;
+            Some(self.time_from)
+        };
+        time.filter(|t| *t <= self.time_to)
     }
 }
 
