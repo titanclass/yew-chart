@@ -44,23 +44,48 @@ impl LinearScale {
 
 impl Scale for LinearScale {
     fn ticks(&self) -> Vec<Tick> {
-        let step_number = ((self.range.end - self.range.start) / self.step).floor() as i32;
-        let step_size = self.scale * self.step;
-        (0..step_number + 1)
-            .into_iter()
-            .map(move |i| {
-                let location = i as f32 * step_size;
-                let value = self.range.start + (i as f32 * self.step);
-                Tick {
-                    location: NormalisedValue(location),
-                    label: self.labeller.as_ref().map(|l| (l)(value)),
-                }
-            })
-            .collect()
+        LinearScaleInclusiveIter {
+            from: self.range.start,
+            to: self.range.end,
+            step: self.step,
+            first_time: true,
+        }
+        .map(move |v| {
+            let location = (v - self.range.start) * self.scale;
+            Tick {
+                location: NormalisedValue(location),
+                label: self.labeller.as_ref().map(|l| (l)(v)),
+            }
+        })
+        .collect()
     }
 
     fn normalise(&self, value: f32) -> NormalisedValue {
         NormalisedValue((value - self.range.start) * self.scale)
+    }
+}
+
+struct LinearScaleInclusiveIter {
+    pub from: f32,
+    pub to: f32,
+    pub step: f32,
+    pub first_time: bool,
+}
+
+impl Iterator for LinearScaleInclusiveIter {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.first_time {
+            self.from += self.step;
+        } else {
+            self.first_time = false;
+        };
+        if self.from <= self.to {
+            Some(self.from)
+        } else {
+            None
+        }
     }
 }
 
