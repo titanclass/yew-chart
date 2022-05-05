@@ -22,6 +22,10 @@ pub type Labeller = dyn Fn(f32, f32) -> Html;
 /// each datapoint.
 pub type Tooltipper = dyn Fn(f32, f32) -> String;
 
+/// A callback for displaying tooltip data given a mouseover event.
+#[cfg(feature = "custom-tooltip")]
+pub type TooltipCallback = Callback<(MouseEvent, String)>;
+
 /// Describes a data series with each point optionally receiving a labeller
 pub type Data = Vec<(f32, f32, Option<Rc<Labeller>>)>;
 
@@ -88,6 +92,8 @@ pub struct Props {
     pub horizontal_scale: Rc<dyn Scale>,
     pub horizontal_scale_step: f32,
     pub name: String,
+    #[cfg(feature = "custom-tooltip")]
+    pub onmouseover: Rc<TooltipCallback>,
     pub series_type: Type,
     pub tooltipper: Option<Rc<Tooltipper>>,
     pub vertical_scale: Rc<dyn Scale>,
@@ -96,12 +102,24 @@ pub struct Props {
     pub y: f32,
 }
 
+impl Props {
+    #[cfg(feature = "custom-tooltip")]
+    fn is_onmouseover_eq(&self, other: &Self) -> bool {
+        self.onmouseover == other.onmouseover
+    }
+    #[cfg(not(feature = "custom-tooltip"))]
+    fn is_onmouseover_eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
 impl PartialEq for Props {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.data, &other.data)
             && self.height == other.height
             && self.horizontal_scale_step == other.horizontal_scale_step
             && self.name == other.name
+            && self.is_onmouseover_eq(other)
             && self.series_type == other.series_type
             && match (self.tooltipper.as_ref(), other.tooltipper.as_ref()) {
                 (Some(left), Some(right)) => std::ptr::eq(&*left as *const _ as *const u8, &*right as *const _ as *const u8),
@@ -188,6 +206,14 @@ fn draw_chart(
     svg_elements: &mut Vec<VNode>,
     classes: &Classes,
 ) {
+    #[cfg(feature = "custom-tooltip")]
+    fn onmouseover(props: &Props, title: String) -> impl Fn(MouseEvent) {
+        let cb = Rc::clone(&props.onmouseover);
+        move |e| {
+            (*cb).emit((e, title.clone()));
+        }
+    }
+
     match props.series_type {
         Type::Bar(bar_type) => {
             for point in element_points.iter() {
@@ -199,22 +225,36 @@ fn draw_chart(
                 };
 
                 if y1 != y2 {
-                    svg_elements.push(
+                    #[cfg(feature = "custom-tooltip")]
+                    let html = {
+                        let title = if let Some(tt) = &props.tooltipper {
+                            tt(data_x, data_y1)
+                        } else {
+                            String::default()
+                        };
                         html! {
                             <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
-                                class={classes!(classes.to_owned(), "bar-chart")}>
-                            {
-                                if let Some(tt) = props.tooltipper.as_ref() {
-                                    html! {
-                                        <title>{tt(data_x, data_y1)}</title>
-                                    }
-                                } else {
-                                    html!()
-                                }
-                            }
-                            </line>
+                                class={classes!(classes.to_owned(), "bar-chart")}
+                                onmouseover={onmouseover(props, title)}/>
                         }
-                    );
+                    };
+                    #[cfg(not(feature = "custom-tooltip"))]
+                    let html = html! {
+                        <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
+                            class={classes!(classes.to_owned(), "bar-chart")}>
+                        {
+                            if let Some(tt) = &props.tooltipper {
+                                html! {
+                                    <title>{tt(data_x, data_y1)}</title>
+                                }
+                            } else {
+                                html!()
+                            }
+                        }
+                        </line>
+                    };
+
+                    svg_elements.push(html);
                 }
             }
         }
@@ -224,21 +264,34 @@ fn draw_chart(
                 let (data_x2, data_y2, x2, y2) = *point;
 
                 if let Some((data_x1, data_y1, x1, y1)) = last_point {
-                    svg_elements.push(
-                            html! {
-                                <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none">
-                                {
-                                    if let Some(tt) = props.tooltipper.as_ref() {
-                                        html! {
-                                            <title>{tt(data_x1, data_y1)}{"-"}{tt(data_x2, data_y2)}</title>
-                                        }
-                                    } else {
-                                        html!()
-                                    }
+                    #[cfg(feature = "custom-tooltip")]
+                    let html = {
+                        let title = if let Some(tt) = &props.tooltipper {
+                            format!("{}-{}", tt(data_x1, data_y1), tt(data_x2, data_y2))
+                        } else {
+                            String::default()
+                        };
+                        html! {
+                            <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none"
+                            onmouseover={onmouseover(props, title)} />
+                        }
+                    };
+                    #[cfg(not(feature = "custom-tooltip"))]
+                    let html = html! {
+                        <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none">
+                        {
+                            if let Some(tt) = props.tooltipper.as_ref() {
+                                html! {
+                                    <title>{tt(data_x1, data_y1)}{"-"}{tt(data_x2, data_y2)}</title>
                                 }
-                                </line>
+                            } else {
+                                html!()
                             }
-                        );
+                        }
+                        </line>
+                    };
+
+                    svg_elements.push(html);
                 }
 
                 last_point = Some(*point);
