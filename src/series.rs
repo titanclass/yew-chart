@@ -87,18 +87,34 @@ pub enum BarType {
 
 #[derive(Properties, Clone)]
 pub struct Props {
+    /// A vector of data points that represents the series, along with optional labels at each point
     pub data: Rc<Data>,
+    /// The SVG height of the series
     pub height: f32,
+    /// The scaling factor for data along the x axis
     pub horizontal_scale: Rc<dyn Scale>,
-    pub horizontal_scale_step: f32,
+    /// The horizontal scale step is used to determine when there is a gap in data, such that
+    /// if a line chart was drawn, then if two data items are separated by more than this can,
+    /// the line will end and start again. For scatter plots, this property does not get used.
+    /// If None then this functionality is disabled.
+    pub horizontal_scale_step: Option<f32>,
+    /// A name to be used for CSS selection
     pub name: String,
     #[cfg(feature = "custom-tooltip")]
+    /// A callback to receive mouseover events along with tooltipper function text results. Requires
+    /// the custom-tooltip feature.
     pub onmouseover: Rc<TooltipCallback>,
+    /// The type of series to be rendered
     pub series_type: Type,
+    /// An optional function that renders a string to be used for tooltips
     pub tooltipper: Option<Rc<Tooltipper>>,
+    /// The scaling factor for data along the y axis
     pub vertical_scale: Rc<dyn Scale>,
+    /// The SVG width of the series
     pub width: f32,
+    /// The start position
     pub x: f32,
+    /// The start position
     pub y: f32,
 }
 
@@ -165,7 +181,7 @@ impl Series {
 
             let mut top_y = props.height;
 
-            let data_step = props.horizontal_scale_step;
+            let data_step = props.horizontal_scale_step.unwrap_or(f32::MAX);
             let mut last_data_step = -data_step;
             for (data_x, data_y, labeller) in props.data.iter() {
                 let (data_x, data_y) = (*data_x, *data_y);
