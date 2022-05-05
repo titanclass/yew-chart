@@ -49,6 +49,7 @@ impl Scale for LinearScale {
             to: self.range.end,
             step: self.step,
             first_time: true,
+            last_time: false,
         }
         .map(move |v| {
             let location = (v - self.range.start) * self.scale;
@@ -70,6 +71,7 @@ struct LinearScaleInclusiveIter {
     pub to: f32,
     pub step: f32,
     pub first_time: bool,
+    pub last_time: bool,
 }
 
 impl Iterator for LinearScaleInclusiveIter {
@@ -81,8 +83,11 @@ impl Iterator for LinearScaleInclusiveIter {
         } else {
             self.first_time = false;
         };
-        if self.from <= self.to {
+        if self.from < self.to {
             Some(self.from)
+        } else if !self.last_time {
+            self.last_time = true;
+            Some(self.to)
         } else {
             None
         }
