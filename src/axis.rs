@@ -1,3 +1,15 @@
+/// A Axis represents a range of f32 values. The tick interval of that range is expressed
+/// as a step. The axis also has an orientation describing which side of the axis should be used
+/// to convey its optional title.
+///
+/// The component takes a "name" property field so that it may be easily referenced when styled.
+///
+/// The following styling properties are available:
+///
+/// * axis - the axis as a whole
+/// * line - the axis line
+/// * tick - the axis tick line
+/// * text - the axis text
 use std::rc::Rc;
 
 use gloo_events::EventListener;
@@ -52,13 +64,22 @@ pub enum Orientation {
 
 #[derive(Properties, Clone)]
 pub struct Props {
+    /// A name given to the axis that will be used for CSS classes
     pub name: String,
+    /// How the axis will be positioned in relation to other elements
     pub orientation: Orientation,
+    /// The start position
     pub x1: f32,
+    /// The start position
     pub y1: f32,
+    /// The target position as x or y depending on orientation - x for left
+    /// and right, y for bottom and top
     pub xy2: f32,
+    /// The length of ticks
     pub tick_len: f32,
+    /// Any title to be drawn and associated with the axis
     pub title: Option<String>,
+    /// The scaling conversion to be used with the axis
     pub scale: Rc<dyn Scale>,
 }
 
@@ -80,18 +101,6 @@ impl PartialEq for Props {
     }
 }
 
-/// A Axis represents a range of f32 values. The tick interval of that range is expressed
-/// as a step. The axis also has an orientation describing which side of the axis should be used
-/// to convey its optional title.
-///
-/// The component takes a "name" property field so that it may be easily referenced when styled.
-///
-/// The following styling properties are available:
-///
-/// * axis - the axis as a whole
-/// * line - the axis line
-/// * tick - the axis tick line
-/// * text - the axis text
 pub struct Axis {
     _resize_listener: EventListener,
     svg: NodeRef,

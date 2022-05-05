@@ -77,7 +77,6 @@ impl Component for App {
                     name="some-series"
                     data={Rc::clone(&self.data_set)}
                     horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
-                    horizontal_scale_step={Duration::days(2).num_milliseconds() as f32}
                     vertical_scale={Rc::clone(&self.vertical_axis_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
