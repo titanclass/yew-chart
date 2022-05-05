@@ -23,3 +23,8 @@ features = [
     "Element",
     "SvgElement",
 ]
+
+[features]
+
+# Set when custom tooltips are to be used instead of browser based ones
+custom-tooltip = []
