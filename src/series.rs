@@ -16,25 +16,29 @@ use yew::{prelude::*, virtual_dom::VNode};
 use crate::axis::Scale;
 
 /// Describes a closure that takes data values (x, y) and produces Html as the label
-pub type Labeller = dyn Fn(f32, f32) -> Html;
+pub trait Labeller: Fn(f32, f32) -> Html {}
+
+impl<T: Fn(f32, f32) -> Html> Labeller for T {}
 
 /// Describes a closure that takes data values (x, y) and produces tooltip strings for
 /// each datapoint.
-pub type Tooltipper = dyn Fn(f32, f32) -> String;
+pub trait Tooltipper: Fn(f32, f32) -> String {}
+
+impl<T: Fn(f32, f32) -> String> Tooltipper for T {}
 
 /// A callback for displaying tooltip data given a mouseover event.
 #[cfg(feature = "custom-tooltip")]
 pub type TooltipCallback = Callback<(MouseEvent, String)>;
 
 /// Describes a data series with each point optionally receiving a labeller
-pub type Data = Vec<(f32, f32, Option<Rc<Labeller>>)>;
+pub type Data = Vec<(f32, f32, Option<Rc<dyn Labeller>>)>;
 
 const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
 // A convenience for using an optional string as a label along with a circle dot.
-fn label(text: Option<String>) -> Box<Labeller> {
-    Box::new(move |x, y| {
+fn label(text: Option<String>) -> impl Labeller {
+    move |x: f32, y: f32| {
         html! {
             <>
             <circle cx={x.to_string()} cy={y.to_string()} r={CIRCLE_RADIUS.to_string()} />
@@ -43,22 +47,22 @@ fn label(text: Option<String>) -> Box<Labeller> {
             }
             </>
         }
-    })
+    }
 }
 
 /// A circle dot label.
-pub fn circle_label() -> Box<Labeller> {
+pub fn circle_label() -> impl Labeller {
     label(None)
 }
 
 /// A circle dot label with associated text.
-pub fn circle_text_label(text: &str) -> Box<Labeller> {
+pub fn circle_text_label(text: &str) -> impl Labeller {
     label(Some(text.to_string()))
 }
 
 /// Basic tooltip that just outputs a y value
-pub fn y_tooltip() -> Box<Tooltipper> {
-    Box::new(|_, y| (y as i32).to_string())
+pub fn y_tooltip() -> impl Tooltipper {
+    |_, y| (y as i32).to_string()
 }
 
 pub enum Msg {
@@ -107,7 +111,7 @@ pub struct Props {
     /// The type of series to be rendered
     pub series_type: Type,
     /// An optional function that renders a string to be used for tooltips
-    pub tooltipper: Option<Rc<Tooltipper>>,
+    pub tooltipper: Option<Rc<dyn Tooltipper>>,
     /// The scaling factor for data along the y axis
     pub vertical_scale: Rc<dyn Scale>,
     /// The SVG width of the series

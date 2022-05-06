@@ -5,10 +5,12 @@ use std::{ops::Range, rc::Rc};
 use crate::axis::{NormalisedValue, Scale, Tick};
 
 /// An axis labeller is a closure that produces a string given a value within the axis scale
-pub type Labeller = dyn Fn(f32) -> String;
+pub trait Labeller: Fn(f32) -> String {}
 
-fn labeller() -> Box<Labeller> {
-    Box::new(|v| (v as i32).to_string())
+impl<T: Fn(f32) -> String> Labeller for T {}
+
+fn labeller() -> impl Labeller {
+    |v| (v as i32).to_string()
 }
 
 #[derive(Clone)]
@@ -16,7 +18,7 @@ pub struct LinearScale {
     range: Range<f32>,
     step: f32,
     scale: f32,
-    labeller: Option<Rc<Labeller>>,
+    labeller: Option<Rc<dyn Labeller>>,
 }
 
 impl LinearScale {
@@ -29,7 +31,7 @@ impl LinearScale {
     pub fn with_labeller(
         range: Range<f32>,
         step: f32,
-        labeller: Option<Rc<Labeller>>,
+        labeller: Option<Rc<dyn Labeller>>,
     ) -> LinearScale {
         let delta = range.end - range.start;
         let scale = if delta != 0.0 { 1.0 / delta } else { 1.0 };
@@ -133,8 +135,8 @@ mod tests {
 
     #[test]
     fn test_precise_scale() {
-        fn float_labeller() -> Box<Labeller> {
-            Box::new(|v| format!("{:3.2}", v))
+        fn float_labeller() -> impl Labeller {
+            |v| format!("{:3.2}", v)
         }
 
         let scale = LinearScale::with_labeller(0.0..1.0, 0.25, Some(Rc::from(float_labeller())));
