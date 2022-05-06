@@ -7,14 +7,16 @@ use std::{ops::Range, rc::Rc};
 use crate::axis::{NormalisedValue, Scale, Tick};
 
 /// An axis labeller is a closure that produces a string given a value within the axis scale
-pub type Labeller = dyn Fn(i64) -> String;
+pub trait Labeller: Fn(i64) -> String {}
 
-fn local_time_labeller(format: &'static str) -> Box<Labeller> {
-    Box::new(move |ts| {
+impl<T: Fn(i64) -> String> Labeller for T {}
+
+fn local_time_labeller(format: &'static str) -> impl Labeller {
+    move |ts| {
         let utc_date_time = Utc.timestamp_millis(ts);
         let local_date_time: DateTime<Local> = utc_date_time.into();
         local_date_time.format(format).to_string()
-    })
+    }
 }
 
 #[derive(Clone)]
@@ -22,7 +24,7 @@ pub struct TimeScale {
     time: Range<i64>,
     step: i64,
     scale: f32,
-    labeller: Option<Rc<Labeller>>,
+    labeller: Option<Rc<dyn Labeller>>,
 }
 
 impl TimeScale {
@@ -44,7 +46,7 @@ impl TimeScale {
     pub fn with_labeller(
         range: Range<DateTime<Utc>>,
         step: Duration,
-        labeller: Option<Rc<Labeller>>,
+        labeller: Option<Rc<dyn Labeller>>,
     ) -> TimeScale {
         let time_from = range.start.timestamp_millis();
         let time_to = range.end.timestamp_millis();

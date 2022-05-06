@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yew_chart::{
     axis::{Axis, Orientation, Scale},
     linear_axis_scale::LinearScale,
-    series::{self, Data, Series, Type},
+    series::{self, Data, Labeller, Series, Type},
     time_axis_scale::TimeScale,
 };
 
@@ -33,8 +33,8 @@ impl Component for App {
         let start_date = end_date.sub(Duration::days(4));
         let time = start_date..end_date;
 
-        let circle_labeller = Rc::from(series::circle_label());
-        let circle_text_labeller = Rc::from(series::circle_text_label("Label"));
+        let circle_labeller = Rc::from(series::circle_label()) as Rc<dyn Labeller>;
+        let circle_text_labeller = Rc::from(series::circle_text_label("Label")) as Rc<dyn Labeller>;
 
         App {
             data_set: Rc::new(vec![

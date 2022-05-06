@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yew_chart::{
     axis::{Axis, Orientation, Scale},
     linear_axis_scale::LinearScale,
-    series::{self, Series, Type},
+    series::{self, Labeller, Series, Tooltipper, Type},
     time_axis_scale::TimeScale,
 };
 
@@ -23,7 +23,7 @@ fn app() -> Html {
     let start_date = end_date.sub(Duration::days(4));
     let timespan = start_date..end_date;
 
-    let circle_text_labeller = Rc::from(series::circle_text_label("Label"));
+    let circle_text_labeller = Rc::from(series::circle_text_label("Label")) as Rc<dyn Labeller>;
 
     let data_set = Rc::new(vec![
         (start_date.timestamp_millis() as f32, 1.0, None),
@@ -52,7 +52,7 @@ fn app() -> Html {
     let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale>;
     let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale>;
 
-    let tooltip = Rc::from(series::y_tooltip());
+    let tooltip = Rc::from(series::y_tooltip()) as Rc<dyn Tooltipper>;
 
     html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
