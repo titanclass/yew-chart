@@ -85,7 +85,7 @@ impl Iterator for LinearScaleInclusiveIter {
         } else {
             self.first_time = false;
         };
-        if self.from < self.to {
+        if (self.step >= 0.0 && self.from < self.to) || (self.step < 0.0 && self.from > self.to) {
             Some(self.from)
         } else if !self.last_time {
             self.last_time = true;
@@ -134,6 +134,39 @@ mod tests {
     }
 
     #[test]
+    fn test_backward_scale() {
+        let scale = LinearScale::new(100.0..0.0, -25.0);
+
+        assert_eq!(
+            scale.ticks(),
+            vec![
+                Tick {
+                    location: NormalisedValue(-0.0),
+                    label: Some("100".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.25),
+                    label: Some("75".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.5),
+                    label: Some("50".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.75),
+                    label: Some("25".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(1.0),
+                    label: Some("0".to_string())
+                },
+            ]
+        );
+
+        assert_eq!(scale.normalise(50.0), NormalisedValue(0.5));
+    }
+
+    #[test]
     fn test_precise_scale() {
         fn float_labeller() -> impl Labeller {
             |v| format!("{:3.2}", v)
@@ -173,6 +206,21 @@ mod tests {
     #[test]
     fn test_zero_range() {
         let scale = LinearScale::new(1.0..1.0, 0.25);
+
+        assert_eq!(
+            scale.ticks(),
+            vec![Tick {
+                location: NormalisedValue(0.0),
+                label: Some("1".to_string())
+            },]
+        );
+
+        assert_eq!(scale.normalise(1.0), NormalisedValue(0.0));
+    }
+
+    #[test]
+    fn test_zero_duration() {
+        let scale = LinearScale::new(1.0..1.0, 0.0);
 
         assert_eq!(
             scale.ticks(),
