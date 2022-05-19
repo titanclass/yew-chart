@@ -106,7 +106,11 @@ impl Iterator for TimeScaleInclusiveIter {
             self.first_time = false;
             Some(self.time_from)
         };
-        time.filter(|t| *t <= self.time_to)
+        match self.step {
+            s if s > 0 => time.filter(|t| *t <= self.time_to),
+            s if s < 0 => time.filter(|t| *t >= self.time_to),
+            _ => None,
+        }
     }
 }
 
@@ -156,6 +160,45 @@ mod tests {
     }
 
     #[test]
+    fn test_backward_scale() {
+        let start_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let end_date = start_date.sub(Duration::days(4));
+        let range = start_date.into()..end_date.into();
+        let scale = TimeScale::new(range, Duration::days(-1));
+
+        assert_eq!(
+            scale.ticks(),
+            vec![
+                Tick {
+                    location: NormalisedValue(0.0),
+                    label: Some("02-Mar".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.25),
+                    label: Some("01-Mar".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.5),
+                    label: Some("28-Feb".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(0.75),
+                    label: Some("27-Feb".to_string())
+                },
+                Tick {
+                    location: NormalisedValue(1.0),
+                    label: Some("26-Feb".to_string())
+                }
+            ]
+        );
+
+        assert_eq!(
+            scale.normalise(start_date.sub(Duration::days(2)).timestamp_millis() as f32),
+            NormalisedValue(0.50024295)
+        );
+    }
+
+    #[test]
     fn test_zero_range() {
         let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
         let start_date = end_date.clone();
@@ -169,6 +212,21 @@ mod tests {
                 label: Some("02-Mar".to_string())
             },]
         );
+
+        assert_eq!(
+            scale.normalise(end_date.timestamp_millis() as f32),
+            NormalisedValue(0.0)
+        );
+    }
+
+    #[test]
+    fn test_zero_step() {
+        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let start_date = end_date.clone();
+        let range = start_date.into()..end_date.into();
+        let scale = TimeScale::new(range, Duration::days(0));
+
+        assert_eq!(scale.ticks(), vec![]);
 
         assert_eq!(
             scale.normalise(end_date.timestamp_millis() as f32),
