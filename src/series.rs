@@ -185,6 +185,9 @@ impl Series {
 
             let mut top_y = props.height;
 
+            let x_bounds = -0.1..=props.width + 0.1;
+            let y_bounds = -0.1..=props.height + 0.1;
+
             let data_step = props.horizontal_scale_step.unwrap_or(f32::MAX);
             let mut last_data_step = -data_step;
             for (data_x, data_y, labeller) in props.data.iter() {
@@ -194,22 +197,24 @@ impl Series {
                     draw_chart(&element_points, props, &mut svg_elements, &classes);
                     element_points.clear();
                 }
-                let x = (props.horizontal_scale.normalise(data_x).0 * x_scale.min(props.width))
-                    + props.x;
-                let y = props.height
-                    - (props.vertical_scale.normalise(data_y).0 * y_scale).min(props.height)
-                    + props.y;
 
-                if let Some(l) = labeller {
-                    svg_elements.push(html! {
-                        <g class={classes.to_owned()}>
-                            {l(x, y)}
-                        </g>
-                    });
+                let x = props.horizontal_scale.normalise(data_x).0 * x_scale;
+                let y = props.vertical_scale.normalise(data_y).0 * y_scale;
+                if x_bounds.contains(&x) && y_bounds.contains(&y) {
+                    let x = x + props.x;
+                    let y = props.height - y + props.y;
+
+                    if let Some(l) = labeller {
+                        svg_elements.push(html! {
+                            <g class={classes.to_owned()}>
+                                {l(x, y)}
+                            </g>
+                        });
+                    }
+
+                    top_y = top_y.min(y);
+                    element_points.push((data_x, data_y, x, y));
                 }
-
-                top_y = top_y.min(y);
-                element_points.push((data_x, data_y, x, y));
 
                 last_data_step = step;
             }
