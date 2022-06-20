@@ -8,4 +8,4 @@ license = "Apache-2.0"
 [dependencies]
 chrono = { version = "0.4.19", features = [ "serde", "wasmbind" ] }
 yew-chart = { path = "../.." }
-yew = "0.19.3"
+yew = "0.19"
