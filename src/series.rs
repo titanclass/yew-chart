@@ -107,6 +107,7 @@ pub struct Props {
     #[cfg(feature = "custom-tooltip")]
     /// A callback to receive mouseover events along with tooltipper function text results. Requires
     /// the custom-tooltip feature.
+    #[prop_or_else(|| Rc::new(Callback::noop()))]
     pub onmouseover: Rc<TooltipCallback>,
     /// The type of series to be rendered
     pub series_type: Type,
