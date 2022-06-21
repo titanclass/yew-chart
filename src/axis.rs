@@ -10,12 +10,14 @@
 /// * line - the axis line
 /// * tick - the axis tick line
 /// * text - the axis text
-use std::rc::Rc;
+use std::{marker::PhantomData, rc::Rc};
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, SvgElement};
 use yew::prelude::*;
+
+use crate::series::Scalar;
 
 /// Axis scaled value, expected to be between 0 and 1
 /// except in the case where the value is outside of the axis range
@@ -24,6 +26,8 @@ pub struct NormalisedValue(pub f32);
 
 /// Specifies a generic scale on which axes and data can be rendered
 pub trait Scale {
+    type Scalar: Scalar;
+
     /// Provides the list of [ticks](AxisTick) that should be rendered along the axis
     fn ticks(&self) -> Vec<Tick>;
 
@@ -35,7 +39,7 @@ pub trait Scale {
     /// - normalise(60)  -> 0.2
     /// - normalise(75)  -> 0.5
     /// - normalise(100) -> 1
-    fn normalise(&self, value: f32) -> NormalisedValue;
+    fn normalise(&self, value: Self::Scalar) -> NormalisedValue;
 }
 
 /// An axis tick, specifying a label to be displayed at some normalised
@@ -63,7 +67,7 @@ pub enum Orientation {
 }
 
 #[derive(Properties, Clone)]
-pub struct Props {
+pub struct Props<S: Scalar> {
     /// A name given to the axis that will be used for CSS classes
     pub name: String,
     /// How the axis will be positioned in relation to other elements
@@ -80,10 +84,10 @@ pub struct Props {
     /// Any title to be drawn and associated with the axis
     pub title: Option<String>,
     /// The scaling conversion to be used with the axis
-    pub scale: Rc<dyn Scale>,
+    pub scale: Rc<dyn Scale<Scalar = S>>,
 }
 
-impl PartialEq for Props {
+impl<S: Scalar> PartialEq for Props<S> {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
             && self.orientation == other.orientation
@@ -101,19 +105,21 @@ impl PartialEq for Props {
     }
 }
 
-pub struct Axis {
+pub struct Axis<S: Scalar> {
+    phantom: PhantomData<S>,
     _resize_listener: EventListener,
     svg: NodeRef,
 }
 
-impl Component for Axis {
+impl<S: Scalar + 'static> Component for Axis<S> {
     type Message = Msg;
 
-    type Properties = Props;
+    type Properties = Props<S>;
 
     fn create(ctx: &Context<Self>) -> Self {
         let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
         Axis {
+            phantom: PhantomData,
             _resize_listener: EventListener::new(&gloo_utils::window(), "resize", move |e| {
                 on_resize.emit(e.clone())
             }),

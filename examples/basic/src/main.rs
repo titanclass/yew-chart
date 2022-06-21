@@ -26,37 +26,37 @@ fn app() -> Html {
     let circle_text_labeller = Rc::from(series::circle_text_label("Label")) as Rc<dyn Labeller>;
 
     let data_set = Rc::new(vec![
-        (start_date.timestamp_millis() as f32, 1.0, None),
+        (start_date.timestamp_millis(), 1.0, None),
         (
-            start_date.add(Duration::days(1)).timestamp_millis() as f32,
+            start_date.add(Duration::days(1)).timestamp_millis(),
             4.0,
             None,
         ),
         (
-            start_date.add(Duration::days(2)).timestamp_millis() as f32,
+            start_date.add(Duration::days(2)).timestamp_millis(),
             3.0,
             None,
         ),
         (
-            start_date.add(Duration::days(3)).timestamp_millis() as f32,
+            start_date.add(Duration::days(3)).timestamp_millis(),
             2.0,
             None,
         ),
         (
-            start_date.add(Duration::days(4)).timestamp_millis() as f32,
+            start_date.add(Duration::days(4)).timestamp_millis(),
             5.0,
             Some(circle_text_labeller),
         ),
     ]);
 
-    let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale>;
-    let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale>;
+    let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale<Scalar = _>>;
+    let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale<Scalar = _>>;
 
-    let tooltip = Rc::from(series::y_tooltip()) as Rc<dyn Tooltipper>;
+    let tooltip = Rc::from(series::y_tooltip()) as Rc<dyn Tooltipper<_, _>>;
 
     html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
-                <Series
+                <Series<i64, f32>
                     series_type={Type::Line}
                     name="some-series"
                     data={data_set}
@@ -66,7 +66,7 @@ fn app() -> Html {
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
-                <Axis
+                <Axis<f32>
                     name="some-y-axis"
                     orientation={Orientation::Left}
                     scale={Rc::clone(&v_scale)}
@@ -74,7 +74,7 @@ fn app() -> Html {
                     tick_len={TICK_LENGTH}
                     title={"Some Y thing".to_string()} />
 
-                <Axis
+                <Axis<i64>
                     name="some-x-axis"
                     orientation={Orientation::Bottom}
                     scale={Rc::clone(&h_scale)}

@@ -43,37 +43,37 @@ fn app() -> Html {
     let circle_text_labeller = Rc::from(series::circle_text_label("Label")) as Rc<dyn Labeller>;
 
     let data_set = Rc::new(vec![
-        (start_date.timestamp_millis() as f32, 1.0, None),
+        (start_date.timestamp_millis(), 1.0, None),
         (
-            start_date.add(Duration::days(1)).timestamp_millis() as f32,
+            start_date.add(Duration::days(1)).timestamp_millis(),
             4.0,
             None,
         ),
         (
-            start_date.add(Duration::days(2)).timestamp_millis() as f32,
+            start_date.add(Duration::days(2)).timestamp_millis(),
             3.0,
             None,
         ),
         (
-            start_date.add(Duration::days(3)).timestamp_millis() as f32,
+            start_date.add(Duration::days(3)).timestamp_millis(),
             2.0,
             None,
         ),
         (
-            start_date.add(Duration::days(4)).timestamp_millis() as f32,
+            start_date.add(Duration::days(4)).timestamp_millis(),
             5.0,
             Some(circle_text_labeller),
         ),
     ]);
 
-    let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale>;
-    let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale>;
+    let h_scale = Rc::new(TimeScale::new(timespan, Duration::days(1))) as Rc<dyn Scale<Scalar = _>>;
+    let v_scale = Rc::new(LinearScale::new(0.0..5.0, 1.0)) as Rc<dyn Scale<Scalar = _>>;
 
-    let tooltip = Rc::from(series::y_tooltip()) as Rc<dyn Tooltipper>;
+    let tooltip = Rc::from(series::y_tooltip()) as Rc<dyn Tooltipper<_, _>>;
 
     html! {
             <svg class="chart" viewBox={format!("0 0 {} {}", WIDTH, HEIGHT)} preserveAspectRatio="none">
-                <Series
+                <Series<i64, f32>
                     series_type={Type::Line}
                     name="some-series"
                     data={data_set}
@@ -83,7 +83,7 @@ fn app() -> Html {
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
-                <Axis
+                <Axis<f32>
                     name="some-y-axis"
                     orientation={Orientation::Left}
                     scale={Rc::clone(&v_scale)}
@@ -91,7 +91,7 @@ fn app() -> Html {
                     tick_len={TICK_LENGTH}
                     title={"Some Y thing".to_string()} />
 
-                <Axis
+                <Axis<i64>
                     name="some-x-axis"
                     orientation={Orientation::Bottom}
                     scale={Rc::clone(&h_scale)}
@@ -111,11 +111,6 @@ fn app() -> Html {
 >
 > That all said, you probably won't be passing `SeriesData` around via props, but some other `Rc` of a model oriented data type
 > which is to be mapped to it. Using `ptr_eq` is still the way to go there though as you'll get performance benefits.
-
-> A note on dealing with time... yew-chart operates with 32 bit in mind given that it is expected to work well for all
-> WASM targets. As such, coercing i64 timestamps to f32 values will lose precision and round. When dealing with high precision,
-> we recommend that you scale the axis accordingly. The examples/scatter illustrates how milliseconds can be represented by taking
-> the bottom 24 bits of a timestamp.
 
 ### Bar Chart
 
@@ -145,8 +140,7 @@ One final example of this is in using a negative scale and negative values. In t
 
 ### Scatter Plot
 
-`examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts. The example
-also provides an illustration of how to handle high resolution time.
+`examples/scatter` is configured to output a basic scatter plot. The method by which this is accomplished is slightly different to that of the `Line` and `Bar` charts.
 
 ## Contribution policy
 
