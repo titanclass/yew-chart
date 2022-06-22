@@ -266,8 +266,8 @@ fn draw_chart<A, B>(
     B: Scalar,
 {
     #[cfg(feature = "custom-tooltip")]
-    fn onmouseover(props: &Props, title: String) -> impl Fn(MouseEvent) {
-        let cb = Rc::clone(&props.onmouseover);
+    fn onmouseover(cb: &Rc<TooltipCallback>, title: String) -> impl Fn(MouseEvent) {
+        let cb = Rc::clone(cb);
         move |e| {
             (*cb).emit((e, title.clone()));
         }
@@ -294,7 +294,7 @@ fn draw_chart<A, B>(
                         html! {
                             <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
                                 class={classes!(classes.to_owned(), "bar-chart")}
-                                onmouseover={onmouseover(props, title)}/>
+                                onmouseover={onmouseover(&props.onmouseover, title)}/>
                         }
                     };
                     #[cfg(not(feature = "custom-tooltip"))]
@@ -332,7 +332,7 @@ fn draw_chart<A, B>(
                         };
                         html! {
                             <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none"
-                            onmouseover={onmouseover(props, title)} />
+                            onmouseover={onmouseover(&props.onmouseover, title)} />
                         }
                     };
                     #[cfg(not(feature = "custom-tooltip"))]
