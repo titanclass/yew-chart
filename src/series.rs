@@ -62,13 +62,14 @@ const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
 // A convenience for using an optional string as a label along with a circle dot.
-fn label(text: Option<String>) -> impl Labeller {
+fn label(text: Option<&str>) -> impl Labeller {
+    let text = text.map(|t| t.to_string());
     move |x: f32, y: f32| {
         html! {
             <>
             <circle cx={x.to_string()} cy={y.to_string()} r={CIRCLE_RADIUS.to_string()} />
             if let Some(t) = &text {
-                <text x={x.to_string()} y={(y - DATA_LABEL_OFFSET).to_string()}>{t.to_owned()}</text>
+                <text x={x.to_string()} y={(y - DATA_LABEL_OFFSET).to_string()}>{t}</text>
             }
             </>
         }
@@ -82,7 +83,7 @@ pub fn circle_label() -> impl Labeller {
 
 /// A circle dot label with associated text.
 pub fn circle_text_label(text: &str) -> impl Labeller {
-    label(Some(text.to_string()))
+    label(Some(text))
 }
 
 /// Basic tooltip that just outputs a y value
