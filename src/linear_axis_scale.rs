@@ -45,6 +45,8 @@ impl LinearScale {
 }
 
 impl Scale for LinearScale {
+    type Scalar = f32;
+
     fn ticks(&self) -> Vec<Tick> {
         LinearScaleInclusiveIter {
             from: self.range.start,
@@ -63,7 +65,7 @@ impl Scale for LinearScale {
         .collect()
     }
 
-    fn normalise(&self, value: f32) -> NormalisedValue {
+    fn normalise(&self, value: Self::Scalar) -> NormalisedValue {
         NormalisedValue((value - self.range.start) * self.scale)
     }
 }

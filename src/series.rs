@@ -6,7 +6,7 @@
 /// label for that point.
 ///
 /// A name is associated with the series to facilitate styling.
-use std::rc::Rc;
+use std::{cmp, marker::PhantomData, ops, rc::Rc};
 
 use gloo_events::EventListener;
 use wasm_bindgen::JsCast;
@@ -15,6 +15,31 @@ use yew::{prelude::*, virtual_dom::VNode};
 
 use crate::axis::Scale;
 
+/// The Scalar trait expresses the behaviour of data
+/// that can be used within a series.
+pub trait Scalar:
+    Copy
+    + cmp::PartialOrd
+    + ops::Div<Output = Self>
+    + ops::Mul<Output = Self>
+    + ops::Neg<Output = Self>
+    + ops::Sub<Output = Self>
+{
+    fn from(v: f32) -> Self;
+}
+
+impl Scalar for f32 {
+    fn from(v: f32) -> Self {
+        v
+    }
+}
+
+impl Scalar for i64 {
+    fn from(v: f32) -> Self {
+        v as Self
+    }
+}
+
 /// Describes a closure that takes data values (x, y) and produces Html as the label
 pub trait Labeller: Fn(f32, f32) -> Html {}
 
@@ -22,16 +47,16 @@ impl<T: Fn(f32, f32) -> Html> Labeller for T {}
 
 /// Describes a closure that takes data values (x, y) and produces tooltip strings for
 /// each datapoint.
-pub trait Tooltipper: Fn(f32, f32) -> String {}
+pub trait Tooltipper<A: Scalar, B: Scalar>: Fn(A, B) -> String {}
 
-impl<T: Fn(f32, f32) -> String> Tooltipper for T {}
+impl<A: Scalar, B: Scalar, T: Fn(A, B) -> String> Tooltipper<A, B> for T {}
 
 /// A callback for displaying tooltip data given a mouseover event.
 #[cfg(feature = "custom-tooltip")]
 pub type TooltipCallback = Callback<(MouseEvent, String)>;
 
 /// Describes a data series with each point optionally receiving a labeller
-pub type Data = Vec<(f32, f32, Option<Rc<dyn Labeller>>)>;
+pub type Data<A, B> = Vec<(A, B, Option<Rc<dyn Labeller>>)>;
 
 const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
@@ -61,8 +86,8 @@ pub fn circle_text_label(text: &str) -> impl Labeller {
 }
 
 /// Basic tooltip that just outputs a y value
-pub fn y_tooltip() -> impl Tooltipper {
-    |_, y| (y as i32).to_string()
+pub fn y_tooltip<T: Scalar>() -> impl Tooltipper<T, f32> {
+    |_, y: f32| (y as i32).to_string()
 }
 
 pub enum Msg {
@@ -90,13 +115,13 @@ pub enum BarType {
 }
 
 #[derive(Properties, Clone)]
-pub struct Props {
+pub struct Props<A, B> {
     /// A vector of data points that represents the series, along with optional labels at each point
-    pub data: Rc<Data>,
+    pub data: Rc<Data<A, B>>,
     /// The SVG height of the series
     pub height: f32,
     /// The scaling factor for data along the x axis
-    pub horizontal_scale: Rc<dyn Scale>,
+    pub horizontal_scale: Rc<dyn Scale<Scalar = A>>,
     /// The horizontal scale step is used to determine when there is a gap in data, such that
     /// if a line chart was drawn, then if two data items are separated by more than this can,
     /// the line will end and start again. For scatter plots, this property does not get used.
@@ -112,9 +137,9 @@ pub struct Props {
     /// The type of series to be rendered
     pub series_type: Type,
     /// An optional function that renders a string to be used for tooltips
-    pub tooltipper: Option<Rc<dyn Tooltipper>>,
+    pub tooltipper: Option<Rc<dyn Tooltipper<A, B>>>,
     /// The scaling factor for data along the y axis
-    pub vertical_scale: Rc<dyn Scale>,
+    pub vertical_scale: Rc<dyn Scale<Scalar = B>>,
     /// The SVG width of the series
     pub width: f32,
     /// The start position
@@ -123,7 +148,7 @@ pub struct Props {
     pub y: f32,
 }
 
-impl Props {
+impl<A, B> Props<A, B> {
     #[cfg(feature = "custom-tooltip")]
     fn is_onmouseover_eq(&self, other: &Self) -> bool {
         self.onmouseover == other.onmouseover
@@ -134,7 +159,7 @@ impl Props {
     }
 }
 
-impl PartialEq for Props {
+impl<A, B> PartialEq for Props<A, B> {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.data, &other.data)
             && self.height == other.height
@@ -166,14 +191,19 @@ struct DerivedProps {
     svg_elements: Vec<Html>,
 }
 
-pub struct Series {
+pub struct Series<A, B> {
     derived_props: DerivedProps,
+    phantom: PhantomData<(A, B)>,
     _resize_listener: EventListener,
     svg: NodeRef,
 }
 
-impl Series {
-    fn derive_props(props: &Props) -> DerivedProps {
+impl<A, B> Series<A, B>
+where
+    A: Scalar,
+    B: Scalar,
+{
+    fn derive_props(props: &Props<A, B>) -> DerivedProps {
         let classes = classes!("series", props.name.to_owned());
 
         let x_scale = props.width;
@@ -182,14 +212,14 @@ impl Series {
         let mut svg_elements = Vec::<Html>::with_capacity(props.data.len() * 2);
 
         if props.data.len() > 0 {
-            let mut element_points = Vec::<(f32, f32, f32, f32)>::with_capacity(props.data.len());
+            let mut element_points = Vec::<(A, B, f32, f32)>::with_capacity(props.data.len());
 
             let mut top_y = props.height;
 
             let x_bounds = -0.1..=props.width + 0.1;
             let y_bounds = -0.1..=props.height + 0.1;
 
-            let data_step = props.horizontal_scale_step.unwrap_or(f32::MAX);
+            let data_step = A::from(props.horizontal_scale_step.unwrap_or(f32::MAX));
             let mut last_data_step = -data_step;
             for (data_x, data_y, labeller) in props.data.iter() {
                 let (data_x, data_y) = (*data_x, *data_y);
@@ -226,12 +256,15 @@ impl Series {
     }
 }
 
-fn draw_chart(
-    element_points: &[(f32, f32, f32, f32)],
-    props: &Props,
+fn draw_chart<A, B>(
+    element_points: &[(A, B, f32, f32)],
+    props: &Props<A, B>,
     svg_elements: &mut Vec<VNode>,
     classes: &Classes,
-) {
+) where
+    A: Scalar,
+    B: Scalar,
+{
     #[cfg(feature = "custom-tooltip")]
     fn onmouseover(props: &Props, title: String) -> impl Fn(MouseEvent) {
         let cb = Rc::clone(&props.onmouseover);
@@ -285,7 +318,7 @@ fn draw_chart(
             }
         }
         Type::Line => {
-            let mut last_point: Option<(f32, f32, f32, f32)> = None;
+            let mut last_point: Option<(A, B, f32, f32)> = None;
             for point in element_points.iter() {
                 let (data_x2, data_y2, x2, y2) = *point;
 
@@ -327,15 +360,20 @@ fn draw_chart(
     }
 }
 
-impl Component for Series {
+impl<A: 'static, B: 'static> Component for Series<A, B>
+where
+    A: Scalar,
+    B: Scalar,
+{
     type Message = Msg;
 
-    type Properties = Props;
+    type Properties = Props<A, B>;
 
     fn create(ctx: &Context<Self>) -> Self {
         let on_resize = ctx.link().callback(|_: Event| Msg::Resize);
         Series {
             derived_props: Self::derive_props(ctx.props()),
+            phantom: PhantomData,
             _resize_listener: EventListener::new(&gloo_utils::window(), "resize", move |e| {
                 on_resize.emit(e.clone())
             }),

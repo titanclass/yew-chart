@@ -64,6 +64,8 @@ impl TimeScale {
 }
 
 impl Scale for TimeScale {
+    type Scalar = i64;
+
     fn ticks(&self) -> Vec<Tick> {
         TimeScaleInclusiveIter {
             time_from: self.time.start,
@@ -81,8 +83,8 @@ impl Scale for TimeScale {
         .collect()
     }
 
-    fn normalise(&self, value: f32) -> NormalisedValue {
-        NormalisedValue((value - (self.time.start as f32)) * self.scale)
+    fn normalise(&self, value: Self::Scalar) -> NormalisedValue {
+        NormalisedValue((value - self.time.start) as f32 * self.scale)
     }
 }
 
@@ -154,8 +156,8 @@ mod tests {
         );
 
         assert_eq!(
-            scale.normalise(end_date.sub(Duration::days(2)).timestamp_millis() as f32),
-            NormalisedValue(0.4998637)
+            scale.normalise(end_date.sub(Duration::days(2)).timestamp_millis()),
+            NormalisedValue(0.5)
         );
     }
 
@@ -193,8 +195,8 @@ mod tests {
         );
 
         assert_eq!(
-            scale.normalise(start_date.sub(Duration::days(2)).timestamp_millis() as f32),
-            NormalisedValue(0.50024295)
+            scale.normalise(start_date.sub(Duration::days(2)).timestamp_millis()),
+            NormalisedValue(0.5)
         );
     }
 
@@ -214,7 +216,7 @@ mod tests {
         );
 
         assert_eq!(
-            scale.normalise(end_date.timestamp_millis() as f32),
+            scale.normalise(end_date.timestamp_millis()),
             NormalisedValue(0.0)
         );
     }
@@ -229,7 +231,7 @@ mod tests {
         assert_eq!(scale.ticks(), vec![]);
 
         assert_eq!(
-            scale.normalise(end_date.timestamp_millis() as f32),
+            scale.normalise(end_date.timestamp_millis()),
             NormalisedValue(0.0)
         );
     }
