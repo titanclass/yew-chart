@@ -19,25 +19,22 @@ use crate::axis::Scale;
 /// that can be used within a series.
 pub trait Scalar:
     Copy
+    + cmp::PartialEq
     + cmp::PartialOrd
     + ops::Div<Output = Self>
     + ops::Mul<Output = Self>
     + ops::Neg<Output = Self>
     + ops::Sub<Output = Self>
 {
-    fn from(v: f32) -> Self;
+    const MAX: Self;
 }
 
 impl Scalar for f32 {
-    fn from(v: f32) -> Self {
-        v
-    }
+    const MAX: f32 = f32::MAX;
 }
 
 impl Scalar for i64 {
-    fn from(v: f32) -> Self {
-        v as Self
-    }
+    const MAX: i64 = i64::MAX;
 }
 
 /// Describes a closure that takes data values (x, y) and produces Html as the label
@@ -116,7 +113,11 @@ pub enum BarType {
 }
 
 #[derive(Properties, Clone)]
-pub struct Props<A, B> {
+pub struct Props<A, B>
+where
+    A: Scalar,
+    B: Scalar,
+{
     /// A vector of data points that represents the series, along with optional labels at each point
     pub data: Rc<Data<A, B>>,
     /// The SVG height of the series
@@ -127,7 +128,7 @@ pub struct Props<A, B> {
     /// if a line chart was drawn, then if two data items are separated by more than this can,
     /// the line will end and start again. For scatter plots, this property does not get used.
     /// If None then this functionality is disabled.
-    pub horizontal_scale_step: Option<f32>,
+    pub horizontal_scale_step: Option<A>,
     /// A name to be used for CSS selection
     pub name: String,
     #[cfg(feature = "custom-tooltip")]
@@ -149,7 +150,11 @@ pub struct Props<A, B> {
     pub y: f32,
 }
 
-impl<A, B> Props<A, B> {
+impl<A, B> Props<A, B>
+where
+    A: Scalar,
+    B: Scalar,
+{
     #[cfg(feature = "custom-tooltip")]
     fn is_onmouseover_eq(&self, other: &Self) -> bool {
         self.onmouseover == other.onmouseover
@@ -160,7 +165,11 @@ impl<A, B> Props<A, B> {
     }
 }
 
-impl<A, B> PartialEq for Props<A, B> {
+impl<A, B> PartialEq for Props<A, B>
+where
+    A: Scalar,
+    B: Scalar,
+{
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.data, &other.data)
             && self.height == other.height
@@ -220,7 +229,7 @@ where
             let x_bounds = -0.1..=props.width + 0.1;
             let y_bounds = -0.1..=props.height + 0.1;
 
-            let data_step = A::from(props.horizontal_scale_step.unwrap_or(f32::MAX));
+            let data_step = props.horizontal_scale_step.unwrap_or(A::MAX);
             let mut last_data_step = -data_step;
             for (data_x, data_y, labeller) in props.data.iter() {
                 let (data_x, data_y) = (*data_x, *data_y);

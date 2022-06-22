@@ -78,7 +78,7 @@ fn app() -> Html {
                     name="some-series"
                     data={data_set}
                     horizontal_scale={Rc::clone(&h_scale)}
-                    horizontal_scale_step={Duration::days(2).num_milliseconds() as f32}
+                    horizontal_scale_step={Duration::days(2).num_milliseconds()}
                     tooltipper={Rc::clone(&tooltip)}
                     vertical_scale={Rc::clone(&v_scale)}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
