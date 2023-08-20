@@ -13,7 +13,7 @@ impl<T: Fn(i64) -> String> Labeller for T {}
 
 fn local_time_labeller(format: &'static str) -> impl Labeller {
     move |ts| {
-        let utc_date_time = Utc.timestamp_millis(ts);
+        let utc_date_time = Utc.timestamp_millis_opt(ts).unwrap();
         let local_date_time: DateTime<Local> = utc_date_time.into();
         local_date_time.format(format).to_string()
     }
@@ -124,7 +124,10 @@ mod tests {
 
     #[test]
     fn test_scale() {
-        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let end_date = Local
+            .with_ymd_and_hms(2022, 3, 2, 16, 56, 0)
+            .single()
+            .unwrap();
         let start_date = end_date.sub(Duration::days(4));
         let range = start_date.into()..end_date.into();
         let scale = TimeScale::new(range, Duration::days(1));
@@ -163,7 +166,10 @@ mod tests {
 
     #[test]
     fn test_backward_scale() {
-        let start_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
+        let start_date = Local
+            .with_ymd_and_hms(2022, 3, 2, 16, 56, 0)
+            .single()
+            .unwrap();
         let end_date = start_date.sub(Duration::days(4));
         let range = start_date.into()..end_date.into();
         let scale = TimeScale::new(range, Duration::days(-1));
@@ -202,8 +208,11 @@ mod tests {
 
     #[test]
     fn test_zero_range() {
-        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
-        let start_date = end_date.clone();
+        let end_date = Local
+            .with_ymd_and_hms(2022, 3, 2, 16, 56, 0)
+            .single()
+            .unwrap();
+        let start_date = end_date;
         let range = start_date.into()..end_date.into();
         let scale = TimeScale::new(range, Duration::days(1));
 
@@ -223,8 +232,11 @@ mod tests {
 
     #[test]
     fn test_zero_step() {
-        let end_date = Local.ymd(2022, 3, 2).and_hms(16, 56, 0);
-        let start_date = end_date.clone();
+        let end_date = Local
+            .with_ymd_and_hms(2022, 3, 2, 16, 56, 0)
+            .single()
+            .unwrap();
+        let start_date = end_date;
         let range = start_date.into()..end_date.into();
         let scale = TimeScale::new(range, Duration::days(0));
 
