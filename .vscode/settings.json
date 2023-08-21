@@ -1,10 +1,7 @@
 {
-    "rust-analyzer.diagnostics.disabled": [
-        "unresolved-proc-macro"
-    ],
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
-        "examples/basic/Cargo.toml",
-        "examples/scatter/Cargo.toml"
+        "./examples/basic/Cargo.toml",
+        "./examples/scatter/Cargo.toml"
     ]
 }

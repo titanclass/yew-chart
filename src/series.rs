@@ -178,7 +178,7 @@ where
             && self.is_onmouseover_eq(other)
             && self.series_type == other.series_type
             && match (self.tooltipper.as_ref(), other.tooltipper.as_ref()) {
-                (Some(left), Some(right)) => std::ptr::eq(&*left as *const _ as *const u8, &*right as *const _ as *const u8),
+                (Some(left), Some(right)) => std::ptr::eq(left as *const _ as *const u8, right as *const _ as *const u8),
                 _=> false
             }
             && self.width == other.width
