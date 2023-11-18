@@ -128,6 +128,7 @@ where
     /// if a line chart was drawn, then if two data items are separated by more than this can,
     /// the line will end and start again. For scatter plots, this property does not get used.
     /// If None then this functionality is disabled.
+    #[prop_or_default]
     pub horizontal_scale_step: Option<A>,
     /// A name to be used for CSS selection
     pub name: String,
@@ -139,6 +140,7 @@ where
     /// The type of series to be rendered
     pub series_type: Type,
     /// An optional function that renders a string to be used for tooltips
+    #[prop_or_default]
     pub tooltipper: Option<Rc<dyn Tooltipper<A, B>>>,
     /// The scaling factor for data along the y axis
     pub vertical_scale: Rc<dyn Scale<Scalar = B>>,
@@ -397,7 +399,7 @@ where
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         self.derived_props = Self::derive_props(ctx.props());
         true
     }

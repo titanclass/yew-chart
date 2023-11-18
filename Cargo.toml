@@ -10,11 +10,11 @@ repository = "https://github.com/titanclass/yew-chart.git"
 version = "0.5.0"
 
 [dependencies]
-chrono = "0.4"
-gloo-events = "0.1"
-gloo-utils = "0.1"
-wasm-bindgen = "0.2"
-yew = "0.19"
+chrono = "0.4.31"
+gloo-events = "0.2"
+gloo-utils = "0.2"
+wasm-bindgen = "0.2.88"
+yew = "0.21"
 
 [dependencies.web-sys]
 version = "0.3"
