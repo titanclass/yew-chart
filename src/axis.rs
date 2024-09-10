@@ -28,7 +28,7 @@ pub struct NormalisedValue(pub f32);
 pub trait Scale {
     type Scalar: Scalar;
 
-    /// Provides the list of [ticks](AxisTick) that should be rendered along the axis
+    /// Provides the list of [ticks](Tick) that should be rendered along the axis
     fn ticks(&self) -> Vec<Tick>;
 
     /// Normalises a value within the axis scale to a number between 0 and 1,
@@ -69,7 +69,7 @@ pub enum Orientation {
 #[derive(Properties, Clone)]
 pub struct Props<S: Scalar> {
     /// A name given to the axis that will be used for CSS classes
-    pub name: String,
+    pub name: AttrValue,
     /// How the axis will be positioned in relation to other elements
     pub orientation: Orientation,
     /// The start position
@@ -83,7 +83,7 @@ pub struct Props<S: Scalar> {
     pub tick_len: f32,
     /// Any title to be drawn and associated with the axis
     #[prop_or_default]
-    pub title: Option<String>,
+    pub title: Option<AttrValue>,
     /// The scaling conversion to be used with the axis
     pub scale: Rc<dyn Scale<Scalar = S>>,
 }
@@ -143,14 +143,14 @@ impl<S: Scalar + 'static> Component for Axis<S> {
 
         fn title(x: f32, y: f32, baseline: &str, title: &str) -> Html {
             html! {
-                <text
+                    <text
                     x={x.to_string()} y={y.to_string()}
                     dominant-baseline={baseline.to_string()}
                     text-anchor={"middle"}
                     transform-origin={format!("{} {}", x, y)}
                     class="title" >
-                    {title}
-                </text>
+                        {title}
+                    </text>
             }
         }
 
@@ -171,7 +171,7 @@ impl<S: Scalar + 'static> Component for Axis<S> {
             };
 
             html! {
-                <svg ref={self.svg.clone()} class={classes!("axis", class, p.name.to_owned())}>
+                <svg ref={self.svg.clone()} class={classes!("axis", class, &p.name)}>
                     <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.x1.to_string()} y2={p.xy2.to_string()} class="line" />
                     { for (p.scale.ticks().iter()).map(|Tick { location: NormalisedValue(normalised_location), label }| {
                         let y = (p.xy2 - (normalised_location * scale)) as u32;
@@ -206,7 +206,7 @@ impl<S: Scalar + 'static> Component for Axis<S> {
             };
 
             html! {
-                <svg ref={self.svg.clone()} class={classes!("axis", class, p.name.to_owned())}>
+                <svg ref={self.svg.clone()} class={classes!("axis", class, &p.name)}>
                     <line x1={p.x1.to_string()} y1={p.y1.to_string()} x2={p.xy2.to_string()} y2={p.y1.to_string()} class="line" />
                     { for(p.scale.ticks().iter()).map(|Tick { location: NormalisedValue(normalised_location), label }| {
                         let x = p.x1 + normalised_location * scale;

@@ -59,8 +59,8 @@ const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
 // A convenience for using an optional string as a label along with a circle dot.
-fn label(text: Option<&str>) -> impl Labeller {
-    let text = text.map(|t| t.to_string());
+fn label(text: Option<impl Into<String>>) -> impl Labeller {
+    let text = text.map(|t| t.into());
     move |x: f32, y: f32| {
         html! {
             <>
@@ -75,11 +75,11 @@ fn label(text: Option<&str>) -> impl Labeller {
 
 /// A circle dot label.
 pub fn circle_label() -> impl Labeller {
-    label(None)
+    label(None as Option<String>)
 }
 
 /// A circle dot label with associated text.
-pub fn circle_text_label(text: &str) -> impl Labeller {
+pub fn circle_text_label(text: impl Into<String>) -> impl Labeller {
     label(Some(text))
 }
 
@@ -131,7 +131,7 @@ where
     #[prop_or_default]
     pub horizontal_scale_step: Option<A>,
     /// A name to be used for CSS selection
-    pub name: String,
+    pub name: AttrValue,
     #[cfg(feature = "custom-tooltip")]
     /// A callback to receive mouseover events along with tooltipper function text results. Requires
     /// the custom-tooltip feature.
@@ -216,7 +216,7 @@ where
     B: Scalar,
 {
     fn derive_props(props: &Props<A, B>) -> DerivedProps {
-        let classes = classes!("series", props.name.to_owned());
+        let classes = classes!("series", &props.name);
 
         let x_scale = props.width;
         let y_scale = props.height;
@@ -249,7 +249,7 @@ where
 
                     if let Some(l) = labeller {
                         svg_elements.push(html! {
-                            <g class={classes.to_owned()}>
+                            <g class={classes.clone()}>
                                 {l(x, y)}
                             </g>
                         });
@@ -305,14 +305,14 @@ fn draw_chart<A, B>(
                         };
                         html! {
                             <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
-                                class={classes!(classes.to_owned(), "bar-chart")}
+                                class={classes!(classes.clone(), "bar-chart")}
                                 onmouseover={onmouseover(&props.onmouseover, title)}/>
                         }
                     };
                     #[cfg(not(feature = "custom-tooltip"))]
                     let html = html! {
                         <line x1={x.to_string()} y1={y1.to_string()} x2={x.to_string()} y2={y2.to_string()}
-                            class={classes!(classes.to_owned(), "bar-chart")}>
+                            class={classes!(classes.clone(), "bar-chart")}>
                         {
                             if let Some(tt) = &props.tooltipper {
                                 html! {
@@ -343,13 +343,13 @@ fn draw_chart<A, B>(
                             String::default()
                         };
                         html! {
-                            <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none"
+                            <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.clone()} fill="none"
                             onmouseover={onmouseover(&props.onmouseover, title)} />
                         }
                     };
                     #[cfg(not(feature = "custom-tooltip"))]
                     let html = html! {
-                        <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.to_owned()} fill="none">
+                        <line x1={x1.to_string()} y1={y1.to_string()} x2={x2.to_string()} y2={y2.to_string()} class={classes.clone()} fill="none">
                         {
                             if let Some(tt) = props.tooltipper.as_ref() {
                                 html! {
@@ -410,7 +410,7 @@ where
         html! {
             <svg ref={self.svg.clone()}>
                 <line x1={p.x.to_string()} x2={(p.x + p.width).to_string()} y1=0 y2=0 />
-                { self.derived_props.svg_elements.to_owned() }
+                { self.derived_props.svg_elements.clone() }
             </svg>
         }
     }
