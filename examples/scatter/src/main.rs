@@ -42,12 +42,12 @@ impl Component for App {
                 (
                     start_date.add(Duration::milliseconds(1)).timestamp_millis(),
                     4.0,
-                    Some(Rc::clone(&circle_labeller)),
+                    Some(circle_labeller.clone()),
                 ),
                 (
                     start_date.add(Duration::milliseconds(2)).timestamp_millis(),
                     3.0,
-                    Some(Rc::clone(&circle_labeller)),
+                    Some(circle_labeller.clone()),
                 ),
                 (
                     start_date.add(Duration::milliseconds(3)).timestamp_millis(),
@@ -79,26 +79,26 @@ impl Component for App {
                 <Series<i64, f32>
                     series_type={Type::Scatter}
                     name="some-series"
-                    data={Rc::clone(&self.data_set)}
-                    horizontal_scale={Rc::clone(&self.horizontal_axis_scale)}
-                    vertical_scale={Rc::clone(&self.vertical_axis_scale)}
+                    data={self.data_set.clone()}
+                    horizontal_scale={self.horizontal_axis_scale.clone()}
+                    vertical_scale={self.vertical_axis_scale.clone()}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
                 <Axis<f32>
                     name="some-y-axis"
                     orientation={Orientation::Left}
-                    scale={Rc::clone(&self.vertical_axis_scale)}
+                    scale={self.vertical_axis_scale.clone()}
                     x1={MARGIN} y1={MARGIN} xy2={HEIGHT - MARGIN}
                     tick_len={TICK_LENGTH}
-                    title={"Some Y thing".to_string()} />
+                    title={"Some Y thing"} />
 
                 <Axis<i64>
                     name="some-x-axis"
                     orientation={Orientation::Bottom}
-                    scale={Rc::clone(&self.horizontal_axis_scale)}
+                    scale={self.horizontal_axis_scale.clone()}
                     x1={MARGIN} y1={HEIGHT - MARGIN} xy2={WIDTH - MARGIN}
                     tick_len={TICK_LENGTH}
-                    title={"Some X thing (ms)".to_string()} />
+                    title={"Some X thing (ms)"} />
 
             </svg>
         }

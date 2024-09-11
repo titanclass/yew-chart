@@ -100,9 +100,8 @@ impl Iterator for TimeScaleInclusiveIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         let time = if !self.first_time {
-            self.time_from.checked_add(self.step).map(|time| {
-                self.time_from = time;
-                time
+            self.time_from.checked_add(self.step).inspect(|time| {
+                self.time_from = *time;
             })
         } else {
             self.first_time = false;

@@ -60,27 +60,27 @@ fn app() -> Html {
                     series_type={Type::Line}
                     name="some-series"
                     data={data_set}
-                    horizontal_scale={Rc::clone(&h_scale)}
+                    horizontal_scale={h_scale.clone()}
                     horizontal_scale_step={Duration::days(2).num_milliseconds()}
-                    tooltipper={Rc::clone(&tooltip)}
-                    vertical_scale={Rc::clone(&v_scale)}
+                    tooltipper={tooltip.clone()}
+                    vertical_scale={v_scale.clone()}
                     x={MARGIN} y={MARGIN} width={WIDTH - (MARGIN * 2.0)} height={HEIGHT - (MARGIN * 2.0)} />
 
                 <Axis<f32>
                     name="some-y-axis"
                     orientation={Orientation::Left}
-                    scale={Rc::clone(&v_scale)}
+                    scale={v_scale}
                     x1={MARGIN} y1={MARGIN} xy2={HEIGHT - MARGIN}
                     tick_len={TICK_LENGTH}
-                    title={"Some Y thing".to_string()} />
+                    title={"Some Y thing"} />
 
                 <Axis<i64>
                     name="some-x-axis"
                     orientation={Orientation::Bottom}
-                    scale={Rc::clone(&h_scale)}
+                    scale={h_scale}
                     x1={MARGIN} y1={HEIGHT - MARGIN} xy2={WIDTH - MARGIN}
                     tick_len={TICK_LENGTH}
-                    title={"Some X thing".to_string()} />
+                    title={"Some X thing"} />
 
             </svg>
     }
