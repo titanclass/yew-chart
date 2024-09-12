@@ -1,0 +1,11 @@
+[package]
+name = "basic"
+version = "0.1.0"
+authors = ["Christopher Hunt"]
+edition = "2018"
+license = "Apache-2.0"
+
+[dependencies]
+chrono = { version = "0.4.31", features = [ "serde", "wasmbind" ] }
+yew-chart = { path = "../.." }
+yew = { version = "0.21", features = ["csr"] }

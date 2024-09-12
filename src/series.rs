@@ -55,6 +55,20 @@ pub type TooltipCallback = Callback<(MouseEvent, String)>;
 /// Describes a data series with each point optionally receiving a labeller
 pub type Data<A, B> = Vec<(A, B, Option<Rc<dyn Labeller>>)>;
 
+/// Convert a series of scalars, r, into a series of 2d cartesian points (x, y).
+/// The points are arranged at equally spaced angles, each with distance r from the origin
+pub fn to_radial(data: Vec<f32>) -> Data<f32, f32> {
+    let len = data.len();
+    let arc_angle = (360.0 / (len as f32).max(1.0)).to_radians();
+    data.into_iter()
+        .enumerate()
+        .map(|(i, value)| {
+            let angle = i as f32 * arc_angle;
+            (angle.sin() * value, angle.cos() * value, None)
+        })
+        .collect()
+}
+
 const DATA_LABEL_OFFSET: f32 = 3.0;
 const CIRCLE_RADIUS: f32 = DATA_LABEL_OFFSET * 0.5;
 
@@ -95,6 +109,8 @@ pub enum Msg {
 /// Describes how to process each item of series data
 #[derive(Clone, PartialEq)]
 pub enum Type {
+    /// Plots the data points as a polygon
+    Area,
     /// Plots the data points as bars
     Bar(BarType),
     /// Plots the data points as lines
@@ -286,6 +302,16 @@ fn draw_chart<A, B>(
     }
 
     match props.series_type {
+        Type::Area => {
+            let points = element_points
+                .iter()
+                .map(|(_, _, x, y)| format!("{x},{y} "))
+                .collect::<Vec<_>>()
+                .concat();
+            svg_elements.push(html! {
+                <polygon class={classes.clone()} fill="none" points={points} />
+            })
+        }
         Type::Bar(bar_type) => {
             for point in element_points.iter() {
                 let (data_x, data_y1, x, y1) = *point;
