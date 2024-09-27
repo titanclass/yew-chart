@@ -2,6 +2,7 @@
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
         "./examples/basic/Cargo.toml",
+        "./examples/radar/Cargo.toml",
         "./examples/scatter/Cargo.toml"
     ]
 }
